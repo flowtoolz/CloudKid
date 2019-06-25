@@ -3,7 +3,7 @@
     # meta infos
     s.name             = "CloudKid"
     s.version          = "0.0.1"
-    s.summary          = "An Angel that helps you with CloudKit"
+    s.summary          = "Lift your code above the harsh realities of CloudKit"
     s.description      = "This is how the kids nowadays do this cloud thing with Swift"
     s.homepage         = "http://flowtoolz.com"
     s.license          = 'MIT'
@@ -30,6 +30,6 @@
     s.dependency 'FoundationToolz', '~> 1.0'
     s.dependency 'SwiftObserver', '~> 5.1'
     s.dependency 'SwiftyToolz', '~> 1.5'
-    s.dependency 'PromiseKit', '~> 6.8'
+    s.dependency 'PromiseKit', '~> 6.9'
     
 end

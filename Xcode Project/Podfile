@@ -1,0 +1,19 @@
+target 'CloudKidDevelopment' do
+
+  use_frameworks!
+
+  platform :ios, '11.0'
+
+  # Pods for CloudKid
+
+  pod 'CloudKid', :path=> '../'
+
+  target 'CloudKidDevelopmentTests' do
+
+    inherit! :search_paths
+
+    # Pods for testing
+
+  end
+
+end

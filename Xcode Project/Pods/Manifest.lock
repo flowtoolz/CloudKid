@@ -1,0 +1,48 @@
+PODS:
+  - CloudKid (0.0.1):
+    - FoundationToolz (~> 1.0)
+    - PromiseKit (~> 6.9)
+    - SwiftObserver (~> 5.1)
+    - SwiftyToolz (~> 1.5)
+  - FoundationToolz (1.0.4):
+    - ReachabilitySwift (~> 4.3.0)
+  - PromiseKit (6.9.0):
+    - PromiseKit/CorePromise (= 6.9.0)
+    - PromiseKit/Foundation (= 6.9.0)
+    - PromiseKit/UIKit (= 6.9.0)
+  - PromiseKit/CorePromise (6.9.0)
+  - PromiseKit/Foundation (6.9.0):
+    - PromiseKit/CorePromise
+  - PromiseKit/UIKit (6.9.0):
+    - PromiseKit/CorePromise
+  - ReachabilitySwift (4.3.1)
+  - SwiftObserver (5.1.0):
+    - SwiftyToolz (~> 1.5.0)
+  - SwiftyToolz (1.5.1)
+
+DEPENDENCIES:
+  - CloudKid (from `../`)
+
+SPEC REPOS:
+  https://github.com/cocoapods/specs.git:
+    - FoundationToolz
+    - PromiseKit
+    - ReachabilitySwift
+    - SwiftObserver
+    - SwiftyToolz
+
+EXTERNAL SOURCES:
+  CloudKid:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  CloudKid: 9fbd52f3f1407e567923a063c8c4f8ab200591d7
+  FoundationToolz: edc4ce3f506c270334a2c05b9a5e8ad1e1f6cc4a
+  PromiseKit: 97397236f9e9c443d5b70a941d49cad25160af7a
+  ReachabilitySwift: 4032e2f59586e11e3b0ebe15b167abdd587a388b
+  SwiftObserver: aaa449d0b6d0115200935e77ca080b21bc38e81b
+  SwiftyToolz: bd69a6eebc4e4a50846e71875cab0b7e47640814
+
+PODFILE CHECKSUM: 1bf4ee49265caa480ce87dbd2dd5e75f95fe7b31
+
+COCOAPODS: 1.7.2

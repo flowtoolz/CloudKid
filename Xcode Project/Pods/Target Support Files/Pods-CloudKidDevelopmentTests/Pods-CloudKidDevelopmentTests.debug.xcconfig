@@ -1,0 +1,8 @@
+FRAMEWORK_SEARCH_PATHS = $(inherited) "${PODS_CONFIGURATION_BUILD_DIR}/CloudKid" "${PODS_CONFIGURATION_BUILD_DIR}/FoundationToolz" "${PODS_CONFIGURATION_BUILD_DIR}/PromiseKit" "${PODS_CONFIGURATION_BUILD_DIR}/ReachabilitySwift" "${PODS_CONFIGURATION_BUILD_DIR}/SwiftObserver" "${PODS_CONFIGURATION_BUILD_DIR}/SwiftyToolz"
+GCC_PREPROCESSOR_DEFINITIONS = $(inherited) COCOAPODS=1
+HEADER_SEARCH_PATHS = $(inherited) "${PODS_CONFIGURATION_BUILD_DIR}/CloudKid/CloudKid.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/FoundationToolz/FoundationToolz.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/PromiseKit/PromiseKit.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/ReachabilitySwift/Reachability.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/SwiftObserver/SwiftObserver.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/SwiftyToolz/SwiftyToolz.framework/Headers"
+OTHER_LDFLAGS = $(inherited) -framework "CloudKid" -framework "CoreTelephony" -framework "Foundation" -framework "FoundationToolz" -framework "PromiseKit" -framework "Reachability" -framework "SwiftObserver" -framework "SwiftyToolz" -framework "SystemConfiguration" -framework "UIKit"
+PODS_BUILD_DIR = ${BUILD_DIR}
+PODS_CONFIGURATION_BUILD_DIR = ${PODS_BUILD_DIR}/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)
+PODS_PODFILE_DIR_PATH = ${SRCROOT}/.
+PODS_ROOT = ${SRCROOT}/Pods
