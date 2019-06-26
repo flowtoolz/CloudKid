@@ -86,7 +86,10 @@ public class CKDatabaseController: CustomObservable
         }
     }
     
-    public var hasChangeToken: Bool { return ckDatabase.hasServerChangeToken }
+    public func hasChangeToken(forZone zoneID: CKRecordZone.ID) -> Bool
+    {
+        return ckDatabase.hasChangeToken(forZone: zoneID)
+    }
     
     // MARK: - Save and Delete
     

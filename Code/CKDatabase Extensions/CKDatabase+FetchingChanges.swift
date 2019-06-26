@@ -12,8 +12,9 @@ public extension CKDatabase
         {
             resolver in
             
-            let fetch = CKFetchRecordZoneChangesOperation(zoneID: zoneID,
-                                                          token: serverChangeToken)
+            let token = changeToken(forZone: zoneID)
+            
+            let fetch = CKFetchRecordZoneChangesOperation(zoneID: zoneID, token: token)
             {
                 changes, error in
                 
@@ -22,11 +23,11 @@ public extension CKDatabase
                     log(error: error.ckReadable.message)
                     
                     // if this failed, it's unclear whether we've "used up" the change token, so we have to resync completely
-                    self.serverChangeToken = nil
+                    self.save(changeToken: nil, forZone: zoneID)
                 }
                 else
                 {
-                    self.serverChangeToken = changes?.serverChangeToken
+                    self.save(changeToken: changes?.serverChangeToken, forZone: zoneID)
                 }
                 
                 resolver.resolve(changes, error?.ckReadable)
@@ -36,42 +37,42 @@ public extension CKDatabase
         }
     }
     
-    // MARK: - Server Change Token
+    // MARK: - Server Change Token Per Zone
     
-    var hasServerChangeToken: Bool { return serverChangeToken != nil }
-
-    private var serverChangeToken: CKServerChangeToken?
+    func hasChangeToken(forZone zoneID: CKRecordZone.ID) -> Bool
     {
-        // TODO: save server change token with zone specific key. if there's one token per zone....
+        return changeToken(forZone: zoneID) != nil
+    }
+    
+    private func changeToken(forZone zoneID: CKRecordZone.ID) -> CKServerChangeToken?
+    {
+        let tokenKey = defaultsKeyForChangeToken(ofZone: zoneID)
+        guard let tokenData = defaults.data(forKey: tokenKey) else { return nil }
+        let token = NSKeyedUnarchiver.unarchiveObject(with: tokenData)
+        return token as? CKServerChangeToken
+    }
+
+    private func save(changeToken: CKServerChangeToken?,
+                      forZone zoneID: CKRecordZone.ID)
+    {
+        let tokenKey = defaultsKeyForChangeToken(ofZone: zoneID)
         
-        get
+        guard let newToken = changeToken else
         {
-            guard let tokenData = defaults.data(forKey: tokenKey) else
-            {
-                return nil
-            }
-            
-            let token = NSKeyedUnarchiver.unarchiveObject(with: tokenData)
-            
-            return token as? CKServerChangeToken
+            defaults.removeObject(forKey: tokenKey)
+            return
         }
         
-        set
-        {
-            guard let newToken = newValue else
-            {
-                defaults.removeObject(forKey: tokenKey)
-                return
-            }
-            
-            let tokenData = NSKeyedArchiver.archivedData(withRootObject: newToken)
-            
-            defaults.set(tokenData, forKey: tokenKey)
-        }
+        let tokenData = NSKeyedArchiver.archivedData(withRootObject: newToken)
+        defaults.set(tokenData, forKey: tokenKey)
     }
     
     private var defaults: UserDefaults { return UserDefaults.standard }
-    private var tokenKey: String { return "UserDefaultsKeyCloudKitServerChangeToken" }
+    
+    private func defaultsKeyForChangeToken(ofZone zoneID: CKRecordZone.ID) -> String
+    {
+        return "ChangeTokenForCKRecordZoneID" + zoneID.zoneName
+    }
 }
 
 private extension CKFetchRecordZoneChangesOperation
