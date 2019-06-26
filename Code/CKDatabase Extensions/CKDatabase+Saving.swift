@@ -127,8 +127,6 @@ public struct SaveResult
     let failures: [SaveFailure]
 }
 
-// TODO: when the conflict is being resolved, the resolved version should be written to the server record and that record should be written back to the server
-
 public struct SaveConflict
 {
     init?(from error: Error?)

@@ -8,11 +8,11 @@ public extension CKDatabase
     
     func fetchChanges(fromZone zoneID: CKRecordZone.ID) -> Promise<Changes>
     {
+        let token = changeToken(forZone: zoneID)
+        
         return Promise
         {
             resolver in
-            
-            let token = changeToken(forZone: zoneID)
             
             let fetch = CKFetchRecordZoneChangesOperation(zoneID: zoneID, token: token)
             {

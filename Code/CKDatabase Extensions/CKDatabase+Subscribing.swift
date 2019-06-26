@@ -17,26 +17,28 @@ public extension CKDatabase
         let notificationInfo = CKSubscription.NotificationInfo()
         notificationInfo.shouldSendContentAvailable = true
         notificationInfo.desiredKeys = desiredKeys
-        
         subscription.notificationInfo = notificationInfo
+        
+        let operation = CKModifySubscriptionsOperation(subscriptionsToSave: [subscription],
+                                                       subscriptionIDsToDelete: nil)
         
         return Promise
         {
             resolver in
             
-            // TODO: use CKModifySubscriptionsOperation instead
-            
-            save(subscription)
+            operation.modifySubscriptionsCompletionBlock =
             {
-                subscription, error in
+                savedSubscriptions, _, error in
                 
                 if let error = error
                 {
                     log(error: error.ckReadable.message)
                 }
                 
-                resolver.resolve(subscription, error?.ckReadable)
+                resolver.resolve(savedSubscriptions?.first, error?.ckReadable)
             }
+            
+            perform(operation)
         }
     }
 }
