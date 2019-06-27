@@ -153,11 +153,13 @@ public class CKDatabaseController: CustomObservable
     private let ckDatabase: CKDatabase
     private let ckContainer = CKContainer.default()
     
-    // MARK: - Observability of Notifications
+    // MARK: - Observability of Database Notifications
     
-    public func handlePushNotification(with userInfo: [String : Any])
+    public func handleDatabaseNotification(with userInfo: [String : Any])
     {
-        guard let notification = CKNotification(fromRemoteNotificationDictionary: userInfo) else
+        guard let notification = CKNotification(fromRemoteNotificationDictionary: userInfo),
+            notification.containerIdentifier == ckContainer.containerIdentifier
+        else
         {
             return
         }
@@ -166,12 +168,19 @@ public class CKDatabaseController: CustomObservable
             let dbNotification = notification as? CKDatabaseNotification
         else
         {
-            return log(error: "Received unexpected iCloud notification: \(notification.debugDescription).")
+            log(error: "Received CloudKit notification of unexpected type: \(notification.debugDescription).")
+            return
         }
         
-        send(dbNotification)
+        guard dbNotification.databaseScope == ckDatabase.databaseScope else
+        {
+            return
+        }
+        
+        send(.didReceiveDatabaseNotification)
     }
     
-    public typealias Message = CKDatabaseNotification?
-    public let messenger = Messenger<CKDatabaseNotification?>()
+    public typealias Message = Event?
+    public let messenger = Messenger<Event?>()
+    public enum Event { case didReceiveDatabaseNotification }
 }
