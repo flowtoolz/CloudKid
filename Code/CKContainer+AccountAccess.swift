@@ -34,7 +34,7 @@ public extension CKContainer
         }
     }
     
-    private func fetchAccountStatus() -> Promise<CKAccountStatus>
+    func fetchAccountStatus() -> Promise<CKAccountStatus>
     {
         return Promise
         {
