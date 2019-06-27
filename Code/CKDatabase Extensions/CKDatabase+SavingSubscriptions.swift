@@ -4,7 +4,7 @@ import SwiftyToolz
 
 public extension CKDatabase
 {
-    func createSubscription(withID id: String) -> Promise<CKSubscription>
+    func saveDatabaseSubscription(withID id: String) -> Promise<CKSubscription>
     {
         let sub = CKDatabaseSubscription(subscriptionID: CKSubscription.ID(id))
         

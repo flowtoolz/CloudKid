@@ -32,12 +32,12 @@ public class CKDatabaseController: CustomObservable
     
     public func createZone(with id: CKRecordZone.ID) -> Promise<CKRecordZone>
     {
-        return ckDatabase.createZone(with: id)
+        return ckDatabase.saveZone(with: id)
     }
     
     public func createDatabaseSubscription(withID id: String) -> Promise<CKSubscription>
     {
-        return ckDatabase.createSubscription(withID: id)
+        return ckDatabase.saveDatabaseSubscription(withID: id)
     }
     
     public func ensureAccountAccess() -> Promise<Void>
@@ -93,7 +93,7 @@ public class CKDatabaseController: CustomObservable
     
     // MARK: - Save and Delete
     
-    public func save(_ ckRecords: [CKRecord]) -> Promise<SaveResult>
+    public func save(_ ckRecords: [CKRecord]) -> Promise<CKSaveResult>
     {
         return firstly
         {
@@ -106,7 +106,7 @@ public class CKDatabaseController: CustomObservable
     }
     
     public func deleteCKRecords(ofType type: String,
-                                inZone zoneID: CKRecordZone.ID) -> Promise<DeletionResult>
+                                inZone zoneID: CKRecordZone.ID) -> Promise<CKDeletionResult>
     {
         return firstly
         {
@@ -118,7 +118,7 @@ public class CKDatabaseController: CustomObservable
         }
     }
     
-    public func deleteCKRecords(withIDs ids: [CKRecord.ID]) -> Promise<DeletionResult>
+    public func deleteCKRecords(withIDs ids: [CKRecord.ID]) -> Promise<CKDeletionResult>
     {
         return firstly
         {

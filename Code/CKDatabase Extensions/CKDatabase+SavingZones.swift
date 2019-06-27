@@ -4,7 +4,7 @@ import SwiftyToolz
 
 public extension CKDatabase
 {
-    func createZone(with id: CKRecordZone.ID) -> Promise<CKRecordZone>
+    func saveZone(with id: CKRecordZone.ID) -> Promise<CKRecordZone>
     {
         let zone = CKRecordZone(zoneID: id)
         

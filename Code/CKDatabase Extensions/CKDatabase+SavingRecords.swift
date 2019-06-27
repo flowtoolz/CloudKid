@@ -4,7 +4,7 @@ import SwiftyToolz
 
 public extension CKDatabase
 {
-    func save(_ ckRecords: [CKRecord]) -> Promise<SaveResult>
+    func save(_ ckRecords: [CKRecord]) -> Promise<CKSaveResult>
     {
         guard !ckRecords.isEmpty else
         {
@@ -17,7 +17,7 @@ public extension CKDatabase
             : saveInOneBatch(ckRecords)
     }
     
-    private func saveInBatches(_ ckRecords: [CKRecord]) -> Promise<SaveResult>
+    private func saveInBatches(_ ckRecords: [CKRecord]) -> Promise<CKSaveResult>
     {
         let batches = ckRecords.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
         let batchPromises = batches.map(saveInOneBatch)
@@ -32,13 +32,13 @@ public extension CKDatabase
         }
     }
 
-    private func saveInOneBatch(_ ckRecords: [CKRecord]) -> Promise<SaveResult>
+    private func saveInOneBatch(_ ckRecords: [CKRecord]) -> Promise<CKSaveResult>
     {
         let operation = CKModifyRecordsOperation(recordsToSave: ckRecords,
                                                  recordIDsToDelete: nil)
 
-        var conflicts = [SaveConflict]()
-        var failures = [SaveFailure]()
+        var conflicts = [CKSaveConflict]()
+        var failures = [CKSaveFailure]()
         
         operation.perRecordCompletionBlock =
         {
@@ -46,13 +46,13 @@ public extension CKDatabase
             
             guard let error = error else { return }
             
-            if let conflict = SaveConflict(from: error)
+            if let conflict = CKSaveConflict(from: error)
             {
                 conflicts.append(conflict)
             }
             else
             {
-                failures.append(SaveFailure(record, error))
+                failures.append(CKSaveFailure(record, error))
             }
         }
         
@@ -76,7 +76,7 @@ public extension CKDatabase
                     }
                 }
                 
-                let result = SaveResult(successes: updatedRecords ?? [],
+                let result = CKSaveResult(successes: updatedRecords ?? [],
                                         conflicts: conflicts,
                                         failures: failures)
                 
@@ -87,12 +87,12 @@ public extension CKDatabase
         }
     }
     
-    private func merge(batchPromiseResults: [PromiseKit.Result<SaveResult>],
-                       from batches: [[CKRecord]]) -> SaveResult
+    private func merge(batchPromiseResults: [PromiseKit.Result<CKSaveResult>],
+                       from batches: [[CKRecord]]) -> CKSaveResult
     {
         var successes = [CKRecord]()
-        var conflicts = [SaveConflict]()
-        var failures = [SaveFailure]()
+        var conflicts = [CKSaveConflict]()
+        var failures = [CKSaveFailure]()
         
         for batchIndex in 0 ..< batchPromiseResults.count
         {
@@ -105,29 +105,29 @@ public extension CKDatabase
                 conflicts += saveResult.conflicts
                 failures += saveResult.failures
             case .rejected(let error):
-                failures += batches[batchIndex].map { SaveFailure($0, error) }
+                failures += batches[batchIndex].map { CKSaveFailure($0, error) }
             }
         }
         
-        return SaveResult(successes: successes,
+        return CKSaveResult(successes: successes,
                           conflicts: conflicts,
                           failures: failures)
     }
 }
 
-public struct SaveResult
+public struct CKSaveResult
 {
-    static var empty: SaveResult
+    static var empty: CKSaveResult
     {
-        return SaveResult(successes: [], conflicts: [], failures: [])
+        return CKSaveResult(successes: [], conflicts: [], failures: [])
     }
     
     let successes: [CKRecord]
-    let conflicts: [SaveConflict]
-    let failures: [SaveFailure]
+    let conflicts: [CKSaveConflict]
+    let failures: [CKSaveFailure]
 }
 
-public struct SaveConflict
+public struct CKSaveConflict
 {
     init?(from error: Error?)
     {
@@ -148,7 +148,7 @@ public struct SaveConflict
     let ancestorRecord: CKRecord?
 }
 
-public struct SaveFailure
+public struct CKSaveFailure
 {
     init(_ record: CKRecord, _ error: Error)
     {

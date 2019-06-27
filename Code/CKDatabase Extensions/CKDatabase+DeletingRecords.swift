@@ -5,7 +5,7 @@ import SwiftyToolz
 public extension CKDatabase
 {
     func deleteCKRecords(ofType type: String,
-                         inZone zoneID: CKRecordZone.ID) -> Promise<DeletionResult>
+                         inZone zoneID: CKRecordZone.ID) -> Promise<CKDeletionResult>
     {
         return firstly
         {
@@ -21,7 +21,7 @@ public extension CKDatabase
         }
     }
     
-    func deleteCKRecords(with ckRecordIDs: [CKRecord.ID]) -> Promise<DeletionResult>
+    func deleteCKRecords(with ckRecordIDs: [CKRecord.ID]) -> Promise<CKDeletionResult>
     {
         guard !ckRecordIDs.isEmpty else
         {
@@ -34,7 +34,7 @@ public extension CKDatabase
             : deleteCKRecordsInOneBatch(with: ckRecordIDs)
     }
     
-    private func deleteCKRecordsInBatches(with ckRecordIDs: [CKRecord.ID]) -> Promise<DeletionResult>
+    private func deleteCKRecordsInBatches(with ckRecordIDs: [CKRecord.ID]) -> Promise<CKDeletionResult>
     {
         let batches = ckRecordIDs.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
         let batchPromises = batches.map(deleteCKRecordsInOneBatch)
@@ -49,7 +49,7 @@ public extension CKDatabase
         }
     }
 
-    private func deleteCKRecordsInOneBatch(with ckRecordIDs: [CKRecord.ID]) -> Promise<DeletionResult>
+    private func deleteCKRecordsInOneBatch(with ckRecordIDs: [CKRecord.ID]) -> Promise<CKDeletionResult>
     {
         let operation = CKModifyRecordsOperation(recordsToSave: nil,
                                                  recordIDsToDelete: ckRecordIDs)
@@ -76,7 +76,7 @@ public extension CKDatabase
                 
                 let successes = idsOfDeletedRecords ?? []
                 let failures = self.partialDeletionFailures(from: error)
-                let result = DeletionResult(successes: successes, failures: failures)
+                let result = CKDeletionResult(successes: successes, failures: failures)
                 
                 resolver.fulfill(result)
             }
@@ -85,21 +85,21 @@ public extension CKDatabase
         }
     }
     
-    private func partialDeletionFailures(from error: Error?) -> [DeletionFailure]
+    private func partialDeletionFailures(from error: Error?) -> [CKDeletionFailure]
     {
         guard let ckError = error?.ckError,
             ckError.code == .partialFailure,
             let errorsByID = ckError.partialErrorsByItemID,
             let errorsByRecordID = errorsByID as? [CKRecord.ID : Error] else { return [] }
         
-        return errorsByRecordID.map { DeletionFailure($0.0, $0.1) }
+        return errorsByRecordID.map { CKDeletionFailure($0.0, $0.1) }
     }
     
-    private func merge(batchPromiseResults: [PromiseKit.Result<DeletionResult>],
-                       from batches: [[CKRecord.ID]]) -> DeletionResult
+    private func merge(batchPromiseResults: [PromiseKit.Result<CKDeletionResult>],
+                       from batches: [[CKRecord.ID]]) -> CKDeletionResult
     {
         var successes = [CKRecord.ID]()
-        var failures = [DeletionFailure]()
+        var failures = [CKDeletionFailure]()
         
         for batchIndex in 0 ..< batchPromiseResults.count
         {
@@ -111,26 +111,26 @@ public extension CKDatabase
                 successes += deletionResult.successes
                 failures += deletionResult.failures
             case .rejected(let error):
-                failures += batches[batchIndex].map { DeletionFailure($0, error) }
+                failures += batches[batchIndex].map { CKDeletionFailure($0, error) }
             }
         }
         
-        return DeletionResult(successes: successes, failures: failures)
+        return CKDeletionResult(successes: successes, failures: failures)
     }
 }
 
-public struct DeletionResult
+public struct CKDeletionResult
 {
-    static var empty: DeletionResult
+    static var empty: CKDeletionResult
     {
-        return DeletionResult(successes: [], failures: [])
+        return CKDeletionResult(successes: [], failures: [])
     }
     
     var successes: [CKRecord.ID]
-    let failures: [DeletionFailure]
+    let failures: [CKDeletionFailure]
 }
 
-public struct DeletionFailure
+public struct CKDeletionFailure
 {
     init(_ id: CKRecord.ID, _ error: Error)
     {
