@@ -4,7 +4,7 @@ import SwiftyToolz
 
 public extension CKDatabase
 {
-    func save(_ ckRecords: [CKRecord]) -> Promise<CKSaveResult>
+    func save(_ ckRecords: [CKRecord]) -> Promise<SaveResult>
     {
         guard !ckRecords.isEmpty else
         {
@@ -17,7 +17,7 @@ public extension CKDatabase
             : saveInOneBatch(ckRecords)
     }
     
-    private func saveInBatches(_ ckRecords: [CKRecord]) -> Promise<CKSaveResult>
+    private func saveInBatches(_ ckRecords: [CKRecord]) -> Promise<SaveResult>
     {
         let batches = ckRecords.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
         let batchPromises = batches.map(saveInOneBatch)
@@ -32,13 +32,13 @@ public extension CKDatabase
         }
     }
 
-    private func saveInOneBatch(_ ckRecords: [CKRecord]) -> Promise<CKSaveResult>
+    private func saveInOneBatch(_ ckRecords: [CKRecord]) -> Promise<SaveResult>
     {
         let operation = CKModifyRecordsOperation(recordsToSave: ckRecords,
                                                  recordIDsToDelete: nil)
 
-        var conflicts = [CKSaveConflict]()
-        var failures = [CKSaveFailure]()
+        var conflicts = [SaveConflict]()
+        var failures = [SaveFailure]()
         
         operation.perRecordCompletionBlock =
         {
@@ -46,13 +46,13 @@ public extension CKDatabase
             
             guard let error = error else { return }
             
-            if let conflict = CKSaveConflict(from: error)
+            if let conflict = SaveConflict(from: error)
             {
                 conflicts.append(conflict)
             }
             else
             {
-                failures.append(CKSaveFailure(record, error))
+                failures.append(SaveFailure(record, error))
             }
         }
         
@@ -76,7 +76,7 @@ public extension CKDatabase
                     }
                 }
                 
-                let result = CKSaveResult(successes: updatedRecords ?? [],
+                let result = SaveResult(successes: updatedRecords ?? [],
                                         conflicts: conflicts,
                                         failures: failures)
                 
@@ -87,12 +87,12 @@ public extension CKDatabase
         }
     }
     
-    private func merge(batchPromiseResults: [PromiseKit.Result<CKSaveResult>],
-                       from batches: [[CKRecord]]) -> CKSaveResult
+    private func merge(batchPromiseResults: [PromiseKit.Result<SaveResult>],
+                       from batches: [[CKRecord]]) -> SaveResult
     {
         var successes = [CKRecord]()
-        var conflicts = [CKSaveConflict]()
-        var failures = [CKSaveFailure]()
+        var conflicts = [SaveConflict]()
+        var failures = [SaveFailure]()
         
         for batchIndex in 0 ..< batchPromiseResults.count
         {
@@ -105,59 +105,59 @@ public extension CKDatabase
                 conflicts += saveResult.conflicts
                 failures += saveResult.failures
             case .rejected(let error):
-                failures += batches[batchIndex].map { CKSaveFailure($0, error) }
+                failures += batches[batchIndex].map { SaveFailure($0, error) }
             }
         }
         
-        return CKSaveResult(successes: successes,
+        return SaveResult(successes: successes,
                             conflicts: conflicts,
                             failures: failures)
     }
-}
-
-public struct CKSaveResult
-{
-    static var empty: CKSaveResult
-    {
-        return CKSaveResult(successes: [], conflicts: [], failures: [])
-    }
     
-    public let successes: [CKRecord]
-    public let conflicts: [CKSaveConflict]
-    public let failures: [CKSaveFailure]
-}
-
-public struct CKSaveConflict
-{
-    init?(from error: Error?)
+    struct SaveResult
     {
-        guard let ckError = error?.ckError,
-            case .serverRecordChanged = ckError.code,
-            let clientRecord = ckError.clientRecord,
-            let serverRecord = ckError.serverRecord else { return nil }
+        static var empty: SaveResult
+        {
+            return SaveResult(successes: [], conflicts: [], failures: [])
+        }
         
-        self.clientRecord = clientRecord
-        self.serverRecord = serverRecord
-        
-        // server can't provide ancestor when client record wasn't fetched from server, because the client record's change tag wouldn't match any previous change tag of that record on the server
-        self.ancestorRecord = ckError.ancestorRecord
+        public let successes: [CKRecord]
+        public let conflicts: [SaveConflict]
+        public let failures: [SaveFailure]
     }
     
-    public let clientRecord: CKRecord
-    public let serverRecord: CKRecord
-    public let ancestorRecord: CKRecord?
-}
-
-public struct CKSaveFailure
-{
-    init(_ record: CKRecord, _ error: Error)
+    struct SaveConflict
     {
-        self.record = record
-        self.error = error
+        init?(from error: Error?)
+        {
+            guard let ckError = error?.ckError,
+                case .serverRecordChanged = ckError.code,
+                let clientRecord = ckError.clientRecord,
+                let serverRecord = ckError.serverRecord else { return nil }
+            
+            self.clientRecord = clientRecord
+            self.serverRecord = serverRecord
+            
+            // server can't provide ancestor when client record wasn't fetched from server, because the client record's change tag wouldn't match any previous change tag of that record on the server
+            self.ancestorRecord = ckError.ancestorRecord
+        }
+        
+        public let clientRecord: CKRecord
+        public let serverRecord: CKRecord
+        public let ancestorRecord: CKRecord?
     }
     
-    public let record: CKRecord
-    public let error: Error
+    struct SaveFailure
+    {
+        init(_ record: CKRecord, _ error: Error)
+        {
+            self.record = record
+            self.error = error
+        }
+        
+        public let record: CKRecord
+        public let error: Error
+    }
 }
 
 private let maxBatchSize = 400

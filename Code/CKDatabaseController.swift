@@ -93,7 +93,7 @@ public class CKDatabaseController: CustomObservable
     
     // MARK: - Save and Delete
     
-    public func save(_ ckRecords: [CKRecord]) -> Promise<CKSaveResult>
+    public func save(_ ckRecords: [CKRecord]) -> Promise<CKDatabase.SaveResult>
     {
         return firstly
         {
