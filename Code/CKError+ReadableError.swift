@@ -71,7 +71,7 @@ public extension CKError
         case .participantMayNeedVerification: return "Participant May Need Verification"
         case .serverResponseLost: return "Server Response Lost"
         case .assetNotAvailable: return "Asset Not Available"
-        @unknown default: return "Unknown Enum Case"
+        @unknown default: return "Unknown CKError code"
         }
     }
     
