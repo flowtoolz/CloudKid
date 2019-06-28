@@ -110,8 +110,8 @@ public extension CKDatabase
         }
         
         return CKSaveResult(successes: successes,
-                          conflicts: conflicts,
-                          failures: failures)
+                            conflicts: conflicts,
+                            failures: failures)
     }
 }
 
@@ -122,9 +122,9 @@ public struct CKSaveResult
         return CKSaveResult(successes: [], conflicts: [], failures: [])
     }
     
-    let successes: [CKRecord]
-    let conflicts: [CKSaveConflict]
-    let failures: [CKSaveFailure]
+    public let successes: [CKRecord]
+    public let conflicts: [CKSaveConflict]
+    public let failures: [CKSaveFailure]
 }
 
 public struct CKSaveConflict
@@ -143,9 +143,9 @@ public struct CKSaveConflict
         self.ancestorRecord = ckError.ancestorRecord
     }
     
-    let clientRecord: CKRecord
-    let serverRecord: CKRecord
-    let ancestorRecord: CKRecord?
+    public let clientRecord: CKRecord
+    public let serverRecord: CKRecord
+    public let ancestorRecord: CKRecord?
 }
 
 public struct CKSaveFailure
@@ -156,8 +156,8 @@ public struct CKSaveFailure
         self.error = error
     }
     
-    let record: CKRecord
-    let error: Error
+    public let record: CKRecord
+    public let error: Error
 }
 
 private let maxBatchSize = 400

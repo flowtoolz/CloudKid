@@ -5,7 +5,7 @@ import SwiftyToolz
 public extension CKDatabase
 {
     func deleteCKRecords(ofType type: String,
-                         inZone zoneID: CKRecordZone.ID) -> Promise<CKDeletionResult>
+                         inZone zoneID: CKRecordZone.ID) -> Promise<DeletionResult>
     {
         return firstly
         {
@@ -21,7 +21,7 @@ public extension CKDatabase
         }
     }
     
-    func deleteCKRecords(with ckRecordIDs: [CKRecord.ID]) -> Promise<CKDeletionResult>
+    func deleteCKRecords(with ckRecordIDs: [CKRecord.ID]) -> Promise<DeletionResult>
     {
         guard !ckRecordIDs.isEmpty else
         {
@@ -34,7 +34,7 @@ public extension CKDatabase
             : deleteCKRecordsInOneBatch(with: ckRecordIDs)
     }
     
-    private func deleteCKRecordsInBatches(with ckRecordIDs: [CKRecord.ID]) -> Promise<CKDeletionResult>
+    private func deleteCKRecordsInBatches(with ckRecordIDs: [CKRecord.ID]) -> Promise<DeletionResult>
     {
         let batches = ckRecordIDs.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
         let batchPromises = batches.map(deleteCKRecordsInOneBatch)
@@ -49,7 +49,7 @@ public extension CKDatabase
         }
     }
 
-    private func deleteCKRecordsInOneBatch(with ckRecordIDs: [CKRecord.ID]) -> Promise<CKDeletionResult>
+    private func deleteCKRecordsInOneBatch(with ckRecordIDs: [CKRecord.ID]) -> Promise<DeletionResult>
     {
         let operation = CKModifyRecordsOperation(recordsToSave: nil,
                                                  recordIDsToDelete: ckRecordIDs)
@@ -76,7 +76,7 @@ public extension CKDatabase
                 
                 let successes = idsOfDeletedRecords ?? []
                 let failures = self.partialDeletionFailures(from: error)
-                let result = CKDeletionResult(successes: successes, failures: failures)
+                let result = DeletionResult(successes: successes, failures: failures)
                 
                 resolver.fulfill(result)
             }
@@ -85,21 +85,21 @@ public extension CKDatabase
         }
     }
     
-    private func partialDeletionFailures(from error: Error?) -> [CKDeletionFailure]
+    private func partialDeletionFailures(from error: Error?) -> [DeletionFailure]
     {
         guard let ckError = error?.ckError,
             ckError.code == .partialFailure,
             let errorsByID = ckError.partialErrorsByItemID,
             let errorsByRecordID = errorsByID as? [CKRecord.ID : Error] else { return [] }
         
-        return errorsByRecordID.map { CKDeletionFailure($0.0, $0.1) }
+        return errorsByRecordID.map { DeletionFailure($0.0, $0.1) }
     }
     
-    private func merge(batchPromiseResults: [PromiseKit.Result<CKDeletionResult>],
-                       from batches: [[CKRecord.ID]]) -> CKDeletionResult
+    private func merge(batchPromiseResults: [PromiseKit.Result<DeletionResult>],
+                       from batches: [[CKRecord.ID]]) -> DeletionResult
     {
         var successes = [CKRecord.ID]()
-        var failures = [CKDeletionFailure]()
+        var failures = [DeletionFailure]()
         
         for batchIndex in 0 ..< batchPromiseResults.count
         {
@@ -111,35 +111,35 @@ public extension CKDatabase
                 successes += deletionResult.successes
                 failures += deletionResult.failures
             case .rejected(let error):
-                failures += batches[batchIndex].map { CKDeletionFailure($0, error) }
+                failures += batches[batchIndex].map { DeletionFailure($0, error) }
             }
         }
         
-        return CKDeletionResult(successes: successes, failures: failures)
-    }
-}
-
-public struct CKDeletionResult
-{
-    static var empty: CKDeletionResult
-    {
-        return CKDeletionResult(successes: [], failures: [])
+        return DeletionResult(successes: successes, failures: failures)
     }
     
-    var successes: [CKRecord.ID]
-    let failures: [CKDeletionFailure]
-}
-
-public struct CKDeletionFailure
-{
-    init(_ id: CKRecord.ID, _ error: Error)
+    struct DeletionResult
     {
-        self.recordID = id
-        self.error = error
+        static var empty: DeletionResult
+        {
+            return DeletionResult(successes: [], failures: [])
+        }
+        
+        public let successes: [CKRecord.ID]
+        public let failures: [DeletionFailure]
     }
-    
-    let recordID: CKRecord.ID
-    let error: Error
+
+    struct DeletionFailure
+    {
+        init(_ id: CKRecord.ID, _ error: Error)
+        {
+            self.recordID = id
+            self.error = error
+        }
+        
+        public let recordID: CKRecord.ID
+        public let error: Error
+    }
 }
 
 private let maxBatchSize = 400

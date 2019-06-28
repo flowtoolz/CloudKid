@@ -106,7 +106,7 @@ public class CKDatabaseController: CustomObservable
     }
     
     public func deleteCKRecords(ofType type: String,
-                                inZone zoneID: CKRecordZone.ID) -> Promise<CKDeletionResult>
+                                inZone zoneID: CKRecordZone.ID) -> Promise<CKDatabase.DeletionResult>
     {
         return firstly
         {
@@ -118,7 +118,7 @@ public class CKDatabaseController: CustomObservable
         }
     }
     
-    public func deleteCKRecords(withIDs ids: [CKRecord.ID]) -> Promise<CKDeletionResult>
+    public func deleteCKRecords(withIDs ids: [CKRecord.ID]) -> Promise<CKDatabase.DeletionResult>
     {
         return firstly
         {
