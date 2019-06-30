@@ -4,6 +4,11 @@ import CloudKit
 
 class CKRecordSystemFieldsCacheTests: XCTestCase
 {
+    func testCacheDirectoryExists()
+    {
+        XCTAssertNotNil(cache.directory)
+    }
+    
     func testThatCKRecordsCanBeSavedToCacheFolder()
     {
         let id = "\(#function)"
