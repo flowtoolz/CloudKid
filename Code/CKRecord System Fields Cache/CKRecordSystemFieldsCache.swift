@@ -123,8 +123,7 @@ public class CKRecordSystemFieldsCache
     {
         guard let docDirectory = URL.documentDirectory else { return nil }
         let cacheDir = docDirectory.appendingPathComponent(name)
-        FileManager.default.ensureDirectoryExists(cacheDir)
-        return cacheDir
+        return FileManager.default.ensureDirectoryExists(cacheDir)
     }()
     
     // MARK: - Configuration
