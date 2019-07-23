@@ -120,7 +120,7 @@ public extension CKDatabase
     
     struct DeletionResult
     {
-        static var empty: DeletionResult
+        public static var empty: DeletionResult
         {
             return DeletionResult(successes: [], failures: [])
         }

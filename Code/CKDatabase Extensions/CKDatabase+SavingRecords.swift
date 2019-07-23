@@ -116,7 +116,7 @@ public extension CKDatabase
     
     struct SaveResult
     {
-        static var empty: SaveResult
+        public static var empty: SaveResult
         {
             return SaveResult(successes: [], conflicts: [], failures: [])
         }
