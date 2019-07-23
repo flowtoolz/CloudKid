@@ -164,6 +164,11 @@ public extension CKDatabase
 {
     struct Changes
     {
+        public var hasChanges: Bool
+        {
+            return !changedCKRecords.isEmpty || !idsOfDeletedCKRecords.isEmpty
+        }
+        
         public var changedCKRecords = [CKRecord]()
         public var idsOfDeletedCKRecords = [CKRecord.ID]()
         public var serverChangeToken: CKServerChangeToken? = nil
