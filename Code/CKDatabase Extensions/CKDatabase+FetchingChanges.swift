@@ -6,15 +6,15 @@ public extension CKDatabase
 {
     // MARK: - Fetch Changes
     
-    func fetchChanges(fromZone zoneID: CKRecordZone.ID) -> Promise<Changes>
+    func fetchChanges(from zone: CKRecordZone.ID) -> Promise<Changes>
     {
-        let token = changeToken(forZone: zoneID)
+        let token = changeToken(for: zone)
         
         return Promise
         {
             resolver in
             
-            let fetch = CKFetchRecordZoneChangesOperation(zoneID: zoneID, token: token)
+            let fetch = CKFetchRecordZoneChangesOperation(zone: zone, token: token)
             {
                 changes, error in
                 
@@ -23,11 +23,11 @@ public extension CKDatabase
                     log(error: error.ckReadable.message)
                     
                     // if this failed, it's unclear whether we've "used up" the change token, so we have to resync completely
-                    self.save(changeToken: nil, forZone: zoneID)
+                    self.save(nil, for: zone)
                 }
                 else
                 {
-                    self.save(changeToken: changes?.serverChangeToken, forZone: zoneID)
+                    self.save(changes?.serverChangeToken, for: zone)
                 }
                 
                 resolver.resolve(changes, error?.ckReadable)
@@ -39,23 +39,27 @@ public extension CKDatabase
     
     // MARK: - Server Change Token Per Zone
     
-    func hasChangeToken(forZone zoneID: CKRecordZone.ID) -> Bool
+    func hasChangeToken(for zone: CKRecordZone.ID) -> Bool
     {
-        return changeToken(forZone: zoneID) != nil
+        return changeToken(for: zone) != nil
     }
     
-    private func changeToken(forZone zoneID: CKRecordZone.ID) -> CKServerChangeToken?
+    func deleteChangeToken(for zone: CKRecordZone.ID)
     {
-        let tokenKey = defaultsKeyForChangeToken(ofZone: zoneID)
+        save(nil, for: zone)
+    }
+    
+    private func changeToken(for zone: CKRecordZone.ID) -> CKServerChangeToken?
+    {
+        let tokenKey = defaultsKeyForChangeToken(of: zone)
         guard let tokenData = defaults.data(forKey: tokenKey) else { return nil }
         let token = NSKeyedUnarchiver.unarchiveObject(with: tokenData)
         return token as? CKServerChangeToken
     }
 
-    private func save(changeToken: CKServerChangeToken?,
-                      forZone zoneID: CKRecordZone.ID)
+    private func save(_ changeToken: CKServerChangeToken?, for zone: CKRecordZone.ID)
     {
-        let tokenKey = defaultsKeyForChangeToken(ofZone: zoneID)
+        let tokenKey = defaultsKeyForChangeToken(of: zone)
         
         guard let newToken = changeToken else
         {
@@ -69,15 +73,15 @@ public extension CKDatabase
     
     private var defaults: UserDefaults { return UserDefaults.standard }
     
-    private func defaultsKeyForChangeToken(ofZone zoneID: CKRecordZone.ID) -> String
+    private func defaultsKeyForChangeToken(of zone: CKRecordZone.ID) -> String
     {
-        return "ChangeTokenForCKRecordZoneID" + zoneID.zoneName
+        return "ChangeTokenForCKRecordZoneID" + zone.zoneName
     }
 }
 
 private extension CKFetchRecordZoneChangesOperation
 {
-    convenience init(zoneID fetchZoneID: CKRecordZone.ID,
+    convenience init(zone: CKRecordZone.ID,
                      token: CKServerChangeToken?,
                      handleResult: @escaping (CKDatabase.Changes?, Error?) -> Void)
     {
@@ -85,9 +89,9 @@ private extension CKFetchRecordZoneChangesOperation
         
         zoneOptions.previousServerChangeToken = token
         
-        let options = [fetchZoneID : zoneOptions]
+        let options = [zone : zoneOptions]
 
-        self.init(recordZoneIDs: [fetchZoneID], optionsByRecordZoneID: options)
+        self.init(recordZoneIDs: [zone], optionsByRecordZoneID: options)
         
         var changes = CKDatabase.Changes()
         
@@ -108,7 +112,7 @@ private extension CKFetchRecordZoneChangesOperation
         {
             zoneID, serverToken, clientToken in
             
-            guard zoneID == fetchZoneID else
+            guard zoneID == zone else
             {
                 log(error: "Unexpected zone: \(zoneID.zoneName)")
                 return
@@ -124,7 +128,7 @@ private extension CKFetchRecordZoneChangesOperation
         {
             zoneID, serverToken, clientToken, _, error in
 
-            guard zoneID == fetchZoneID else
+            guard zoneID == zone else
             {
                 log(error: "Unexpected zone: \(zoneID.zoneName)")
                 return

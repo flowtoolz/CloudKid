@@ -4,11 +4,11 @@ import SwiftyToolz
 
 public extension CKDatabase
 {
-    func saveZone(with id: CKRecordZone.ID) -> Promise<CKRecordZone>
+    func save(_ zone: CKRecordZone.ID) -> Promise<CKRecordZone>
     {
-        let zone = CKRecordZone(zoneID: id)
+        let recordZone = CKRecordZone(zoneID: zone)
         
-        let operation = CKModifyRecordZonesOperation(recordZonesToSave: [zone],
+        let operation = CKModifyRecordZonesOperation(recordZonesToSave: [recordZone],
                                                      recordZoneIDsToDelete: nil)
         
         return Promise

@@ -5,25 +5,25 @@ import PromiseKit
 
 public extension CKDatabase
 {
-    func queryCKRecords(ofType type: CKRecord.RecordType,
-                        inZone zoneID: CKRecordZone.ID) -> Promise<[CKRecord]>
+    func queryCKRecords(of type: CKRecord.RecordType,
+                        in zone: CKRecordZone.ID) -> Promise<[CKRecord]>
     {
         let query = CKQuery(recordType: type, predicate: .all)
-        return perform(query, inZone: zoneID)
+        return perform(query, in: zone)
     }
     
-    func perform(_ query: CKQuery, inZone zoneID: CKRecordZone.ID) -> Promise<[CKRecord]>
+    func perform(_ query: CKQuery, in zone: CKRecordZone.ID) -> Promise<[CKRecord]>
     {
-        return perform(query, inZone: zoneID, cursor: nil)
+        return perform(query, in: zone, cursor: nil)
     }
     
     private func perform(_ query: CKQuery,
-                         inZone zoneID: CKRecordZone.ID,
+                         in zone: CKRecordZone.ID,
                          cursor: CKQueryOperation.Cursor?) -> Promise<[CKRecord]>
     {
         return firstly
         {
-            performAndReturnCursor(query, inZone: zoneID, cursor: cursor)
+            performAndReturnCursor(query, in: zone, cursor: cursor)
         }
         .then(on: queue)
         {
@@ -36,7 +36,7 @@ public extension CKDatabase
             
             return firstly
             {
-                self.perform(query, inZone: zoneID, cursor: newCursor)
+                self.perform(query, in: zone, cursor: newCursor)
             }
             .map(on: self.queue)
             {
@@ -46,7 +46,7 @@ public extension CKDatabase
     }
     
     private func performAndReturnCursor(_ query: CKQuery,
-                                        inZone zoneID: CKRecordZone.ID,
+                                        in zone: CKRecordZone.ID,
                                         cursor: CKQueryOperation.Cursor?) -> Promise<([CKRecord], CKQueryOperation.Cursor?)>
     {
         return Promise
@@ -54,7 +54,7 @@ public extension CKDatabase
             resolver in
         
             let queryOperation = CKQueryOperation(query: query)
-            queryOperation.zoneID = zoneID
+            queryOperation.zoneID = zone
             
             setTimeout(on: queryOperation, or: resolver)
             

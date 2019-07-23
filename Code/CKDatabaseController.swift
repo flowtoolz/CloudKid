@@ -12,9 +12,9 @@ public class CKDatabaseController: CustomObservable
 {
     // MARK: - Setup
     
-    public init(databaseScope: CKDatabase.Scope, cacheName: String)
+    public init(scope: CKDatabase.Scope, cacheName: String)
     {
-        switch databaseScope
+        switch scope
         {
         case .public:
             ckDatabase = ckContainer.publicCloudDatabase
@@ -23,21 +23,21 @@ public class CKDatabaseController: CustomObservable
         case .shared:
             ckDatabase = ckContainer.sharedCloudDatabase
         @unknown default:
-            log(error: "Unknown CKDatabase.Scope: \(databaseScope)")
+            log(error: "Unknown CKDatabase.Scope: \(scope)")
             ckDatabase = ckContainer.privateCloudDatabase
         }
         
         ckRecordSystemFieldsCache = CKRecordSystemFieldsCache(name: cacheName)
     }
     
-    public func createZone(with id: CKRecordZone.ID) -> Promise<CKRecordZone>
+    public func create(_ zone: CKRecordZone.ID) -> Promise<CKRecordZone>
     {
-        return ckDatabase.saveZone(with: id)
+        return ckDatabase.save(zone)
     }
     
-    public func createDatabaseSubscription(withID id: String) -> Promise<CKSubscription>
+    public func createDatabaseSubscription(with id: CKSubscription.ID) -> Promise<CKSubscription>
     {
-        return ckDatabase.saveDatabaseSubscription(withID: id)
+        return ckDatabase.saveDatabaseSubscription(with: id)
     }
     
     public func ensureAccountAccess() -> Promise<Void>
@@ -47,12 +47,12 @@ public class CKDatabaseController: CustomObservable
     
     // MARK: - Fetch
     
-    public func queryCKRecords(ofType type: CKRecord.RecordType,
-                               inZone zoneID: CKRecordZone.ID) -> Promise<[CKRecord]>
+    public func queryCKRecords(of type: CKRecord.RecordType,
+                               in zone: CKRecordZone.ID) -> Promise<[CKRecord]>
     {
         return firstly
         {
-            ckDatabase.queryCKRecords(ofType: type, inZone: zoneID)
+            ckDatabase.queryCKRecords(of: type, in: zone)
         }
         .get(on: ckDatabase.queue)
         {
@@ -61,11 +61,11 @@ public class CKDatabaseController: CustomObservable
     }
     
     public func perform(_ query: CKQuery,
-                        inZone zoneID: CKRecordZone.ID) -> Promise<[CKRecord]>
+                        in zone: CKRecordZone.ID) -> Promise<[CKRecord]>
     {
         return firstly
         {
-            ckDatabase.perform(query, inZone: zoneID)
+            ckDatabase.perform(query, in: zone)
         }
         .get(on: ckDatabase.queue)
         {
@@ -73,11 +73,11 @@ public class CKDatabaseController: CustomObservable
         }
     }
     
-    public func fetchChanges(fromZone zoneID: CKRecordZone.ID) -> Promise<CKDatabase.Changes>
+    public func fetchChanges(from zone: CKRecordZone.ID) -> Promise<CKDatabase.Changes>
     {
         return firstly
         {
-            ckDatabase.fetchChanges(fromZone: zoneID)
+            ckDatabase.fetchChanges(from: zone)
         }
         .get(on: ckDatabase.queue)
         {
@@ -86,18 +86,23 @@ public class CKDatabaseController: CustomObservable
         }
     }
     
-    public func hasChangeToken(forZone zoneID: CKRecordZone.ID) -> Bool
+    public func hasChangeToken(for zone: CKRecordZone.ID) -> Bool
     {
-        return ckDatabase.hasChangeToken(forZone: zoneID)
+        return ckDatabase.hasChangeToken(for: zone)
+    }
+    
+    public func deleteChangeToken(for zone: CKRecordZone.ID)
+    {
+        ckDatabase.deleteChangeToken(for: zone)
     }
     
     // MARK: - Save and Delete
     
-    public func save(_ ckRecords: [CKRecord]) -> Promise<CKDatabase.SaveResult>
+    public func save(_ records: [CKRecord]) -> Promise<CKDatabase.SaveResult>
     {
         return firstly
         {
-            ckDatabase.save(ckRecords)
+            ckDatabase.save(records)
         }
         .get(on: ckDatabase.queue)
         {
@@ -105,12 +110,12 @@ public class CKDatabaseController: CustomObservable
         }
     }
     
-    public func deleteCKRecords(ofType type: String,
-                                inZone zoneID: CKRecordZone.ID) -> Promise<CKDatabase.DeletionResult>
+    public func deleteCKRecords(of type: CKRecord.RecordType,
+                                in zone: CKRecordZone.ID) -> Promise<CKDatabase.DeletionResult>
     {
         return firstly
         {
-            ckDatabase.deleteCKRecords(ofType: type, inZone: zoneID)
+            ckDatabase.deleteCKRecords(of: type, in: zone)
         }
         .get(on: ckDatabase.queue)
         {
@@ -118,7 +123,7 @@ public class CKDatabaseController: CustomObservable
         }
     }
     
-    public func deleteCKRecords(withIDs ids: [CKRecord.ID]) -> Promise<CKDatabase.DeletionResult>
+    public func deleteCKRecords(with ids: [CKRecord.ID]) -> Promise<CKDatabase.DeletionResult>
     {
         return firstly
         {
@@ -132,11 +137,10 @@ public class CKDatabaseController: CustomObservable
     
     // MARK: - System Fields Cache
     
-    public func getCKRecordWithCachedSystemFields(id: String,
-                                                  type: CKRecord.RecordType,
-                                                  zoneID: CKRecordZone.ID) -> CKRecord
+    public func getCKRecordWithCachedSystemFields(for id: CKRecord.ID,
+                                                  of type: CKRecord.RecordType) -> CKRecord
     {
-        return ckRecordSystemFieldsCache.getCKRecord(with: id, type: type, zoneID: zoneID)
+        return ckRecordSystemFieldsCache.getCKRecord(for: id, of: type)
     }
     
     private let ckRecordSystemFieldsCache: CKRecordSystemFieldsCache
@@ -155,7 +159,7 @@ public class CKDatabaseController: CustomObservable
     
     // MARK: - Observability of Database Notifications
     
-    public func handleDatabaseNotification(with userInfo: [String : Any])
+    public func handleDatabaseNotification(with userInfo: JSON)
     {
         guard let notification = CKNotification(fromRemoteNotificationDictionary: userInfo),
             notification.containerIdentifier == ckContainer.containerIdentifier

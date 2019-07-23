@@ -9,17 +9,15 @@ public class CKRecordSystemFieldsCache
 {
     // MARK: - Get CKRecord That Has Correct System Fields
     
-    public func getCKRecord(with id: String,
-                            type: CKRecord.RecordType,
-                            zoneID: CKRecordZone.ID) -> CKRecord
+    public func getCKRecord(for id: CKRecord.ID,
+                            of type: CKRecord.RecordType) -> CKRecord
     {
         if let existingCKRecord = loadCKRecord(with: id)
         {
             return existingCKRecord
         }
-        
-        let newCKRecordID = CKRecord.ID(recordName: id, zoneID: zoneID)
-        let newCKRecord = CKRecord(recordType: type, recordID: newCKRecordID)
+    
+        let newCKRecord = CKRecord(recordType: type, recordID: id)
         
         save(newCKRecord)
         
@@ -28,10 +26,10 @@ public class CKRecordSystemFieldsCache
     
     // MARK: - Loading CloudKit Records
     
-    private func loadCKRecord(with id: String) -> CKRecord?
+    private func loadCKRecord(with id: CKRecord.ID) -> CKRecord?
     {
         guard let directory = directory else { return nil }
-        let file = directory.appendingPathComponent(id)
+        let file = directory.appendingPathComponent(id.recordName)
         guard FileManager.default.fileExists(atPath: file.path) else { return nil }
         
         do
@@ -49,11 +47,11 @@ public class CKRecordSystemFieldsCache
     // MARK: - Saving CloudKit Records
     
     @discardableResult
-    public func save(_ ckRecords: [CKRecord]) -> [URL?]?
+    public func save(_ records: [CKRecord]) -> [URL?]?
     {
         guard let directory = directory else { return nil }
         
-        return ckRecords.map
+        return records.map
         {
             ckRecord in
             
@@ -64,12 +62,12 @@ public class CKRecordSystemFieldsCache
     }
     
     @discardableResult
-    public func save(_ ckRecord: CKRecord) -> URL?
+    public func save(_ record: CKRecord) -> URL?
     {
         guard let directory = directory else { return nil }
-        let recordUUID = ckRecord.recordID.recordName
+        let recordUUID = record.recordID.recordName
         let file = directory.appendingPathComponent(recordUUID)
-        return ckRecord.systemFieldEncoding.save(to: file)
+        return record.systemFieldEncoding.save(to: file)
     }
     
     // MARK: - Deleting CloudKit Records

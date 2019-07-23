@@ -4,11 +4,9 @@ import SwiftyToolz
 
 public extension CKDatabase
 {
-    func saveDatabaseSubscription(withID id: String) -> Promise<CKSubscription>
+    func saveDatabaseSubscription(with id: CKSubscription.ID) -> Promise<CKSubscription>
     {
-        let sub = CKDatabaseSubscription(subscriptionID: CKSubscription.ID(id))
-        
-        return save(sub)
+        return save(CKDatabaseSubscription(subscriptionID: id))
     }
     
     private func save(_ subscription: CKSubscription,

@@ -4,22 +4,22 @@ import SwiftyToolz
 
 public extension CKDatabase
 {
-    func save(_ ckRecords: [CKRecord]) -> Promise<SaveResult>
+    func save(_ records: [CKRecord]) -> Promise<SaveResult>
     {
-        guard !ckRecords.isEmpty else
+        guard !records.isEmpty else
         {
             log(warning: "Tried to save empty array of CKRecords.")
             return .value(.empty)
         }
         
-        return ckRecords.count > maxBatchSize
-            ? saveInBatches(ckRecords)
-            : saveInOneBatch(ckRecords)
+        return records.count > maxBatchSize
+            ? saveInBatches(records)
+            : saveInOneBatch(records)
     }
     
-    private func saveInBatches(_ ckRecords: [CKRecord]) -> Promise<SaveResult>
+    private func saveInBatches(_ records: [CKRecord]) -> Promise<SaveResult>
     {
-        let batches = ckRecords.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
+        let batches = records.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
         let batchPromises = batches.map(saveInOneBatch)
         
         return firstly
@@ -32,9 +32,9 @@ public extension CKDatabase
         }
     }
 
-    private func saveInOneBatch(_ ckRecords: [CKRecord]) -> Promise<SaveResult>
+    private func saveInOneBatch(_ records: [CKRecord]) -> Promise<SaveResult>
     {
-        let operation = CKModifyRecordsOperation(recordsToSave: ckRecords,
+        let operation = CKModifyRecordsOperation(recordsToSave: records,
                                                  recordIDsToDelete: nil)
 
         var conflicts = [SaveConflict]()

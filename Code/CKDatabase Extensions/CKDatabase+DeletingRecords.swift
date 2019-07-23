@@ -4,12 +4,12 @@ import SwiftyToolz
 
 public extension CKDatabase
 {
-    func deleteCKRecords(ofType type: String,
-                         inZone zoneID: CKRecordZone.ID) -> Promise<DeletionResult>
+    func deleteCKRecords(of type: CKRecord.RecordType,
+                         in zone: CKRecordZone.ID) -> Promise<DeletionResult>
     {
         return firstly
         {
-            queryCKRecords(ofType: type, inZone: zoneID)
+            queryCKRecords(of: type, in: zone)
         }
         .map(on: queue)
         {
@@ -21,22 +21,22 @@ public extension CKDatabase
         }
     }
     
-    func deleteCKRecords(with ckRecordIDs: [CKRecord.ID]) -> Promise<DeletionResult>
+    func deleteCKRecords(with ids: [CKRecord.ID]) -> Promise<DeletionResult>
     {
-        guard !ckRecordIDs.isEmpty else
+        guard !ids.isEmpty else
         {
             log(warning: "Tried to delete CKRecords with empty array of IDs.")
             return .value(.empty)
         }
         
-        return ckRecordIDs.count > maxBatchSize
-            ? deleteCKRecordsInBatches(with: ckRecordIDs)
-            : deleteCKRecordsInOneBatch(with: ckRecordIDs)
+        return ids.count > maxBatchSize
+            ? deleteCKRecordsInBatches(with: ids)
+            : deleteCKRecordsInOneBatch(with: ids)
     }
     
-    private func deleteCKRecordsInBatches(with ckRecordIDs: [CKRecord.ID]) -> Promise<DeletionResult>
+    private func deleteCKRecordsInBatches(with ids: [CKRecord.ID]) -> Promise<DeletionResult>
     {
-        let batches = ckRecordIDs.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
+        let batches = ids.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
         let batchPromises = batches.map(deleteCKRecordsInOneBatch)
         
         return firstly
@@ -49,10 +49,10 @@ public extension CKDatabase
         }
     }
 
-    private func deleteCKRecordsInOneBatch(with ckRecordIDs: [CKRecord.ID]) -> Promise<DeletionResult>
+    private func deleteCKRecordsInOneBatch(with ids: [CKRecord.ID]) -> Promise<DeletionResult>
     {
         let operation = CKModifyRecordsOperation(recordsToSave: nil,
-                                                 recordIDsToDelete: ckRecordIDs)
+                                                 recordIDsToDelete: ids)
         
         return Promise
         {
