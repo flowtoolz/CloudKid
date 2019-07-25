@@ -12,7 +12,7 @@ public class CKDatabaseController: CustomObservable
 {
     // MARK: - Setup
     
-    public init(scope: CKDatabase.Scope, cacheName: String)
+    public init(scope: CKDatabase.Scope, cacheDirectory: URL)
     {
         switch scope
         {
@@ -27,7 +27,7 @@ public class CKDatabaseController: CustomObservable
             ckDatabase = ckContainer.privateCloudDatabase
         }
         
-        ckRecordSystemFieldsCache = CKRecordSystemFieldsCache(name: cacheName)
+        ckRecordSystemFieldsCache = CKRecordSystemFieldsCache(directory: cacheDirectory)
     }
     
     public func create(_ zone: CKRecordZone.ID) -> Promise<CKRecordZone>

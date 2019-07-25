@@ -28,7 +28,6 @@ public class CKRecordSystemFieldsCache
     
     private func loadCKRecord(with id: CKRecord.ID) -> CKRecord?
     {
-        guard let directory = directory else { return nil }
         let file = directory.appendingPathComponent(id.recordName)
         guard FileManager.default.itemExists(file) else { return nil }
         
@@ -49,8 +48,6 @@ public class CKRecordSystemFieldsCache
     @discardableResult
     public func save(_ records: [CKRecord]) -> [URL?]?
     {
-        guard let directory = directory else { return nil }
-        
         return records.map
         {
             ckRecord in
@@ -64,7 +61,6 @@ public class CKRecordSystemFieldsCache
     @discardableResult
     public func save(_ record: CKRecord) -> URL?
     {
-        guard let directory = directory else { return nil }
         let recordUUID = record.recordID.recordName
         let file = directory.appendingPathComponent(recordUUID)
         return record.systemFieldEncoding.save(to: file)
@@ -76,8 +72,6 @@ public class CKRecordSystemFieldsCache
     @discardableResult
     public func deleteCKRecords(with ids: [CKRecord.ID]) -> Bool
     {
-        guard let directory = directory else { return false }
-        
         var allGood = true
         
         for id in ids
@@ -96,28 +90,17 @@ public class CKRecordSystemFieldsCache
     @discardableResult
     public func clean() -> Bool
     {
-        guard let directory = directory else { return false }
-        
         return FileManager.default.remove(directory)
     }
     
-    // MARK: - The CloudKit Record Cache Directory
-    
-    private(set) lazy var directory: URL? =
-    {
-        guard let docDirectory = URL.documentDirectory else { return nil }
-        let cacheDir = docDirectory.appendingPathComponent(name)
-        return FileManager.default.ensureDirectoryExists(cacheDir)
-    }()
-    
     // MARK: - Configuration
     
-    public init(name: String)
+    public init(directory: URL)
     {
-        self.name = name
+        self.directory = directory
     }
     
-    private let name: String
+    private let directory: URL
 }
 
 
