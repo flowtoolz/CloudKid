@@ -30,7 +30,7 @@ public class CKRecordSystemFieldsCache
     {
         guard let directory = directory else { return nil }
         let file = directory.appendingPathComponent(id.recordName)
-        guard FileManager.default.fileExists(atPath: file.path) else { return nil }
+        guard FileManager.default.itemExists(file) else { return nil }
         
         do
         {
@@ -84,13 +84,8 @@ public class CKRecordSystemFieldsCache
         {
             let file = directory.appendingPathComponent(id.recordName)
             
-            do
+            if !FileManager.default.remove(file)
             {
-                try FileManager.default.removeItem(at: file)
-            }
-            catch
-            {
-                log(error: error.readable.message)
                 allGood = false
             }
         }
@@ -103,16 +98,7 @@ public class CKRecordSystemFieldsCache
     {
         guard let directory = directory else { return false }
         
-        do
-        {
-            try FileManager.default.removeItem(at: directory)
-            return true
-        }
-        catch
-        {
-            log(error: error.localizedDescription)
-            return false
-        }
+        return FileManager.default.remove(directory)
     }
     
     // MARK: - The CloudKit Record Cache Directory
