@@ -107,6 +107,7 @@ public class CKDatabaseController: CustomObservable
         .get(on: ckDatabase.queue)
         {
             self.ckRecordSystemFieldsCache.save($0.successes)
+            self.ckRecordSystemFieldsCache.save($0.conflicts.map({ $0.serverRecord }))
         }
     }
     
