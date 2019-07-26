@@ -22,13 +22,30 @@ public extension CKDatabase
         let batches = records.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
         let batchPromises = batches.map(saveInOneBatch)
         
-        return firstly
+        var sequentialBatches = Promise()
+        
+        var successes = [CKRecord]()
+        var failures = [SaveFailure]()
+        var conflicts = [SaveConflict]()
+        
+        for batchPromise in batchPromises
         {
-            when(resolved: batchPromises)
+            sequentialBatches = sequentialBatches.then
+            {
+                batchPromise.done
+                {
+                    saveResult in
+                    
+                    successes += saveResult.successes
+                    failures += saveResult.failures
+                    conflicts += saveResult.conflicts
+                }
+            }
         }
-        .map(on: queue)
+        
+        return sequentialBatches.map
         {
-            self.merge(batchPromiseResults: $0, from: batches)
+            SaveResult(successes: successes, conflicts: conflicts, failures: failures)
         }
     }
 
@@ -85,33 +102,6 @@ public extension CKDatabase
             
             perform(operation)
         }
-    }
-    
-    private func merge(batchPromiseResults: [PromiseKit.Result<SaveResult>],
-                       from batches: [[CKRecord]]) -> SaveResult
-    {
-        var successes = [CKRecord]()
-        var conflicts = [SaveConflict]()
-        var failures = [SaveFailure]()
-        
-        for batchIndex in 0 ..< batchPromiseResults.count
-        {
-            let batchPromiseResult = batchPromiseResults[batchIndex]
-            
-            switch batchPromiseResult
-            {
-            case .fulfilled(let saveResult):
-                successes += saveResult.successes
-                conflicts += saveResult.conflicts
-                failures += saveResult.failures
-            case .rejected(let error):
-                failures += batches[batchIndex].map { SaveFailure($0, error) }
-            }
-        }
-        
-        return SaveResult(successes: successes,
-                            conflicts: conflicts,
-                            failures: failures)
     }
     
     struct SaveResult

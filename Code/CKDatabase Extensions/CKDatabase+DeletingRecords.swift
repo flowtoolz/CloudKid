@@ -39,13 +39,28 @@ public extension CKDatabase
         let batches = ids.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
         let batchPromises = batches.map(deleteCKRecordsInOneBatch)
         
-        return firstly
+        var successes = [CKRecord.ID]()
+        var failures = [DeletionFailure]()
+        
+        var sequentialBatches = Promise()
+        
+        for batchPromise in batchPromises
         {
-            when(resolved: batchPromises)
+            sequentialBatches = sequentialBatches.then
+            {
+                batchPromise.done
+                {
+                    deletionResult in
+                    
+                    successes += deletionResult.successes
+                    failures += deletionResult.failures
+                }
+            }
         }
-        .map(on: queue)
+        
+        return sequentialBatches.map
         {
-            self.merge(batchPromiseResults: $0, from: batches)
+            DeletionResult(successes: successes, failures: failures)
         }
     }
 
@@ -93,29 +108,6 @@ public extension CKDatabase
             let errorsByRecordID = errorsByID as? [CKRecord.ID : Error] else { return [] }
         
         return errorsByRecordID.map { DeletionFailure($0.0, $0.1) }
-    }
-    
-    private func merge(batchPromiseResults: [PromiseKit.Result<DeletionResult>],
-                       from batches: [[CKRecord.ID]]) -> DeletionResult
-    {
-        var successes = [CKRecord.ID]()
-        var failures = [DeletionFailure]()
-        
-        for batchIndex in 0 ..< batchPromiseResults.count
-        {
-            let batchPromiseResult = batchPromiseResults[batchIndex]
-            
-            switch batchPromiseResult
-            {
-            case .fulfilled(let deletionResult):
-                successes += deletionResult.successes
-                failures += deletionResult.failures
-            case .rejected(let error):
-                failures += batches[batchIndex].map { DeletionFailure($0, error) }
-            }
-        }
-        
-        return DeletionResult(successes: successes, failures: failures)
     }
     
     struct DeletionResult
