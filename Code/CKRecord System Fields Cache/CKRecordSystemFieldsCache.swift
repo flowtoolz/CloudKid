@@ -87,12 +87,6 @@ public class CKRecordSystemFieldsCache
         return allGood
     }
     
-    @discardableResult
-    public func clean() -> Bool
-    {
-        return FileManager.default.remove(directory)
-    }
-    
     // MARK: - Configuration
     
     public init(directory: URL)
