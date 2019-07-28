@@ -2,8 +2,9 @@ import CloudKit
 
 public extension CKRecord
 {
-    convenience init?(fromSystemFieldEncoding data: Data)
+    convenience init?(fromSystemFieldEncoding data: Data?)
     {
+        guard let data = data else { return nil }
         let decoder = NSKeyedUnarchiver(forReadingWith: data)
         decoder.requiresSecureCoding = true
         self.init(coder: decoder)

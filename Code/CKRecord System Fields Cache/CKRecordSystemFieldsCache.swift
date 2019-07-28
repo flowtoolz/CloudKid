@@ -29,18 +29,7 @@ public class CKRecordSystemFieldsCache
     private func loadCKRecord(with id: CKRecord.ID) -> CKRecord?
     {
         let file = directory.appendingPathComponent(id.recordName)
-        guard FileManager.default.itemExists(file) else { return nil }
-        
-        do
-        {
-            let data = try Data(contentsOf: file)
-            return CKRecord(fromSystemFieldEncoding: data)
-        }
-        catch
-        {
-            log(error: error.localizedDescription)
-            return nil
-        }
+        return CKRecord(fromSystemFieldEncoding: Data(from: file))
     }
     
     // MARK: - Saving CloudKit Records
@@ -69,22 +58,16 @@ public class CKRecordSystemFieldsCache
     // MARK: - Deleting CloudKit Records
     
     // TODO: write unit test for deletion funcs
-    @discardableResult
-    public func deleteCKRecords(with ids: [CKRecord.ID]) -> Bool
+    public func deleteCKRecords(with ids: [CKRecord.ID])
     {
-        var allGood = true
-        
-        for id in ids
+        ids.map
         {
-            let file = directory.appendingPathComponent(id.recordName)
-            
-            if FileManager.default.itemExists(file) && !FileManager.default.remove(file)
-            {
-                allGood = false
-            }
+            directory.appendingPathComponent($0.recordName)
         }
-        
-        return allGood
+        .forEach
+        {
+            FileManager.default.remove($0)
+        }
     }
     
     // MARK: - Configuration
