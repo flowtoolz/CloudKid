@@ -106,9 +106,15 @@ public class CKDatabaseController: CustomObservable
         }
         .get(on: ckDatabase.queue)
         {
-            self.ckRecordSystemFieldsCache.save($0.successes)
-            self.ckRecordSystemFieldsCache.save($0.conflicts.map({ $0.serverRecord }))
+            self.process($0)
         }
+    }
+    
+    private func process(_ saveResult: CKDatabase.SaveResult)
+    {
+        ckRecordSystemFieldsCache.save(saveResult.successes)
+        ckRecordSystemFieldsCache.save(saveResult.conflicts.map({ $0.serverRecord }))
+        ckRecordSystemFieldsCache.deleteCKRecords(with: saveResult.failures.map({ $0.record.recordID }))
     }
     
     public func deleteCKRecords(of type: CKRecord.RecordType,
@@ -120,7 +126,7 @@ public class CKDatabaseController: CustomObservable
         }
         .get(on: ckDatabase.queue)
         {
-            self.ckRecordSystemFieldsCache.deleteCKRecords(with: $0.successes)
+            self.process($0)
         }
     }
     
@@ -132,8 +138,14 @@ public class CKDatabaseController: CustomObservable
         }
         .get(on: ckDatabase.queue)
         {
-            self.ckRecordSystemFieldsCache.deleteCKRecords(with: $0.successes)
+            self.process($0)
         }
+    }
+    
+    private func process(_ result: CKDatabase.DeletionResult)
+    {
+        ckRecordSystemFieldsCache.deleteCKRecords(with: result.successes)
+        ckRecordSystemFieldsCache.deleteCKRecords(with: result.failures.map({ $0.recordID }))
     }
     
     // MARK: - System Fields Cache
