@@ -78,7 +78,7 @@ public class CKRecordSystemFieldsCache
         {
             let file = directory.appendingPathComponent(id.recordName)
             
-            if !FileManager.default.remove(file)
+            if FileManager.default.itemExists(file) && !FileManager.default.remove(file)
             {
                 allGood = false
             }
