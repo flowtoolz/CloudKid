@@ -37,7 +37,7 @@ public class CKRecordSystemFieldsCache
     @discardableResult
     public func save(_ records: [CKRecord]) -> [URL?]?
     {
-        return records.map
+        records.map
         {
             ckRecord in
             

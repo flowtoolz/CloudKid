@@ -6,7 +6,7 @@ public extension CKContainer
 {
     func ensureAccountAccess() -> Promise<Void>
     {
-        return firstly
+        firstly
         {
             fetchAccountStatus()
         }
@@ -36,7 +36,7 @@ public extension CKContainer
     
     func fetchAccountStatus() -> Promise<CKAccountStatus>
     {
-        return Promise
+        Promise
         {
             resolver in
             

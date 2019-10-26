@@ -5,20 +5,20 @@ public extension Error
 {
     var ckReadable: ReadableError
     {
-        return ckError?.readable ?? readable
+        ckError?.readable ?? readable
     }
     
     var ckShouldRetry: Bool
     {
-        return ckError?.retryAfterSeconds != nil
+        ckError?.retryAfterSeconds != nil
     }
     
-    var ckError: CKError? { return self as? CKError }
+    var ckError: CKError? { self as? CKError }
 }
 
 public extension CKError
 {
-    var readable: ReadableError { return .message(ckMessage) }
+    var readable: ReadableError { .message(ckMessage) }
     
     var ckMessage: String
     {
@@ -36,7 +36,7 @@ public extension CKError
     {
         switch code
         {
-        case .internalError: return "Internal error"
+        case .internalError: return "Internal Error"
         case .partialFailure: return "Partial Failure"
         case .networkUnavailable: return "Network Unavailable"
         case .networkFailure: return "Network Failure"
@@ -71,12 +71,12 @@ public extension CKError
         case .participantMayNeedVerification: return "Participant May Need Verification"
         case .serverResponseLost: return "Server Response Lost"
         case .assetNotAvailable: return "Asset Not Available"
-        @unknown default: return "Unknown CKError code"
+        @unknown default: return "Unknown CKError Code"
         }
     }
     
     var underlyingError: NSError?
     {
-        return errorUserInfo[NSUnderlyingErrorKey] as? NSError
+        errorUserInfo[NSUnderlyingErrorKey] as? NSError
     }
 }

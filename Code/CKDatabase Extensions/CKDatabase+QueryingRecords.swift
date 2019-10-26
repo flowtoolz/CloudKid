@@ -14,14 +14,14 @@ public extension CKDatabase
     
     func perform(_ query: CKQuery, in zone: CKRecordZone.ID) -> Promise<[CKRecord]>
     {
-        return perform(query, in: zone, cursor: nil)
+        perform(query, in: zone, cursor: nil)
     }
     
     private func perform(_ query: CKQuery,
                          in zone: CKRecordZone.ID,
                          cursor: CKQueryOperation.Cursor?) -> Promise<[CKRecord]>
     {
-        return firstly
+        firstly
         {
             performAndReturnCursor(query, in: zone, cursor: cursor)
         }
@@ -49,7 +49,7 @@ public extension CKDatabase
                                         in zone: CKRecordZone.ID,
                                         cursor: CKQueryOperation.Cursor?) -> Promise<([CKRecord], CKQueryOperation.Cursor?)>
     {
-        return Promise
+        Promise
         {
             resolver in
         

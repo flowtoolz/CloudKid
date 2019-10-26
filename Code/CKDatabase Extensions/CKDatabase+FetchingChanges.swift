@@ -41,7 +41,7 @@ public extension CKDatabase
     
     func hasChangeToken(for zone: CKRecordZone.ID) -> Bool
     {
-        return changeToken(for: zone) != nil
+        changeToken(for: zone) != nil
     }
     
     func deleteChangeToken(for zone: CKRecordZone.ID)
@@ -71,11 +71,11 @@ public extension CKDatabase
         defaults.set(tokenData, forKey: tokenKey)
     }
     
-    private var defaults: UserDefaults { return UserDefaults.standard }
+    private var defaults: UserDefaults { .standard }
     
     private func defaultsKeyForChangeToken(of zone: CKRecordZone.ID) -> String
     {
-        return "ChangeTokenForCKRecordZoneID" + zone.zoneName
+        "ChangeTokenForCKRecordZoneID" + zone.zoneName
     }
 }
 
@@ -166,7 +166,7 @@ public extension CKDatabase
     {
         public var hasChanges: Bool
         {
-            return !changedCKRecords.isEmpty || !idsOfDeletedCKRecords.isEmpty
+            !changedCKRecords.isEmpty || !idsOfDeletedCKRecords.isEmpty
         }
         
         public var changedCKRecords = [CKRecord]()

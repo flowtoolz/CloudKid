@@ -32,17 +32,17 @@ public class CKDatabaseController: CustomObservable
     
     public func create(_ zone: CKRecordZone.ID) -> Promise<CKRecordZone>
     {
-        return ckDatabase.save(zone)
+        ckDatabase.save(zone)
     }
     
     public func createDatabaseSubscription(with id: CKSubscription.ID) -> Promise<CKSubscription>
     {
-        return ckDatabase.saveDatabaseSubscription(with: id)
+        ckDatabase.saveDatabaseSubscription(with: id)
     }
     
     public func ensureAccountAccess() -> Promise<Void>
     {
-        return ckContainer.ensureAccountAccess()
+        ckContainer.ensureAccountAccess()
     }
     
     // MARK: - Fetch
@@ -50,7 +50,7 @@ public class CKDatabaseController: CustomObservable
     public func queryCKRecords(of type: CKRecord.RecordType,
                                in zone: CKRecordZone.ID) -> Promise<[CKRecord]>
     {
-        return firstly
+        firstly
         {
             ckDatabase.queryCKRecords(of: type, in: zone)
         }
@@ -63,7 +63,7 @@ public class CKDatabaseController: CustomObservable
     public func perform(_ query: CKQuery,
                         in zone: CKRecordZone.ID) -> Promise<[CKRecord]>
     {
-        return firstly
+        firstly
         {
             ckDatabase.perform(query, in: zone)
         }
@@ -75,7 +75,7 @@ public class CKDatabaseController: CustomObservable
     
     public func fetchChanges(from zone: CKRecordZone.ID) -> Promise<CKDatabase.Changes>
     {
-        return firstly
+        firstly
         {
             ckDatabase.fetchChanges(from: zone)
         }
@@ -88,7 +88,7 @@ public class CKDatabaseController: CustomObservable
     
     public func hasChangeToken(for zone: CKRecordZone.ID) -> Bool
     {
-        return ckDatabase.hasChangeToken(for: zone)
+        ckDatabase.hasChangeToken(for: zone)
     }
     
     public func deleteChangeToken(for zone: CKRecordZone.ID)
@@ -100,7 +100,7 @@ public class CKDatabaseController: CustomObservable
     
     public func save(_ records: [CKRecord]) -> Promise<CKDatabase.SaveResult>
     {
-        return firstly
+        firstly
         {
             ckDatabase.save(records)
         }
@@ -120,7 +120,7 @@ public class CKDatabaseController: CustomObservable
     public func deleteCKRecords(of type: CKRecord.RecordType,
                                 in zone: CKRecordZone.ID) -> Promise<CKDatabase.DeletionResult>
     {
-        return firstly
+        firstly
         {
             ckDatabase.deleteCKRecords(of: type, in: zone)
         }
@@ -132,7 +132,7 @@ public class CKDatabaseController: CustomObservable
     
     public func deleteCKRecords(with ids: [CKRecord.ID]) -> Promise<CKDatabase.DeletionResult>
     {
-        return firstly
+        firstly
         {
             ckDatabase.deleteCKRecords(with: ids)
         }
@@ -153,7 +153,7 @@ public class CKDatabaseController: CustomObservable
     public func getCKRecordWithCachedSystemFields(for id: CKRecord.ID,
                                                   of type: CKRecord.RecordType) -> CKRecord
     {
-        return ckRecordSystemFieldsCache.getCKRecord(for: id, of: type)
+        ckRecordSystemFieldsCache.getCKRecord(for: id, of: type)
     }
     
     private let ckRecordSystemFieldsCache: CKRecordSystemFieldsCache
@@ -165,7 +165,7 @@ public class CKDatabaseController: CustomObservable
         ckDatabase.perform(operation)
     }
     
-    public var queue: DispatchQueue { return ckDatabase.queue }
+    public var queue: DispatchQueue { ckDatabase.queue }
     
     private let ckDatabase: CKDatabase
     private let ckContainer = CKContainer.default()

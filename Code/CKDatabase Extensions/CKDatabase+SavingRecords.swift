@@ -108,7 +108,7 @@ public extension CKDatabase
     {
         public static var empty: SaveResult
         {
-            return SaveResult(successes: [], conflicts: [], failures: [])
+            SaveResult(successes: [], conflicts: [], failures: [])
         }
         
         public let successes: [CKRecord]

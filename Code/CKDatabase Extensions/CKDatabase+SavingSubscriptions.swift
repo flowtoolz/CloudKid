@@ -6,7 +6,7 @@ public extension CKDatabase
 {
     func saveDatabaseSubscription(with id: CKSubscription.ID) -> Promise<CKSubscription>
     {
-        return save(CKDatabaseSubscription(subscriptionID: id))
+        save(CKDatabaseSubscription(subscriptionID: id))
     }
     
     private func save(_ subscription: CKSubscription,

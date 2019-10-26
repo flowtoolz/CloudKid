@@ -44,5 +44,5 @@ public extension CKDatabase
         queue.asyncAfter(deadline: retryTime, execute: action)
     }
     
-    var queue: DispatchQueue { return iCloudQueue }
+    var queue: DispatchQueue { iCloudQueue }
 }

@@ -7,7 +7,7 @@ public extension CKDatabase
     func deleteCKRecords(of type: CKRecord.RecordType,
                          in zone: CKRecordZone.ID) -> Promise<DeletionResult>
     {
-        return firstly
+        firstly
         {
             queryCKRecords(of: type, in: zone)
         }
@@ -114,7 +114,7 @@ public extension CKDatabase
     {
         public static var empty: DeletionResult
         {
-            return DeletionResult(successes: [], failures: [])
+            DeletionResult(successes: [], failures: [])
         }
         
         public let successes: [CKRecord.ID]
