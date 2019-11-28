@@ -8,7 +8,7 @@ import SwiftyToolz
  
  It provides controlled access to the CKDatabase and cares for observability, setup, availability checking and cashing of CKRecord system fields.
  */
-public class CKDatabaseController: CustomObservable
+public class CKDatabaseController: Observable
 {
     // MARK: - Setup
     
@@ -197,7 +197,6 @@ public class CKDatabaseController: CustomObservable
         send(.didReceiveDatabaseNotification)
     }
     
-    public typealias Message = Event?
     public let messenger = Messenger<Event?>()
     public enum Event { case didReceiveDatabaseNotification }
 }
