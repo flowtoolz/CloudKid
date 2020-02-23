@@ -5,12 +5,12 @@ import SwiftyToolz
 
 // TODO: Possibly improve performance: Load all CKRecords to memory at launch and store them back typically when we save the JSON file ... or/and: do file saving on background thread
 
-public class CKRecordSystemFieldsCache
+class CKRecordSystemFieldsCache
 {
     // MARK: - Get CKRecord That Has Correct System Fields
     
-    public func getCKRecord(for id: CKRecord.ID,
-                            of type: CKRecord.RecordType) -> CKRecord
+    func getCKRecord(for id: CKRecord.ID,
+                     of type: CKRecord.RecordType) -> CKRecord
     {
         if let existingCKRecord = loadCKRecord(with: id)
         {
@@ -29,36 +29,29 @@ public class CKRecordSystemFieldsCache
     private func loadCKRecord(with id: CKRecord.ID) -> CKRecord?
     {
         let file = directory.appendingPathComponent(id.recordName)
-        return CKRecord(fromSystemFieldEncoding: Data(from: file))
+        return CKRecord(fromEncodedSystemFields: Data(from: file))
     }
     
     // MARK: - Saving CloudKit Records
     
     @discardableResult
-    public func save(_ records: [CKRecord]) -> [URL?]?
+    func save(_ ckRecords: [CKRecord]) -> [URL?]?
     {
-        records.map
-        {
-            ckRecord in
-            
-            let recordUUID = ckRecord.recordID.recordName
-            let file = directory.appendingPathComponent(recordUUID)
-            return ckRecord.systemFieldEncoding.save(to: file)
-        }
+        ckRecords.map(save)
     }
     
     @discardableResult
-    public func save(_ record: CKRecord) -> URL?
+    func save(_ ckRecord: CKRecord) -> URL?
     {
-        let recordUUID = record.recordID.recordName
-        let file = directory.appendingPathComponent(recordUUID)
-        return record.systemFieldEncoding.save(to: file)
+        let ckRecordName = ckRecord.recordID.recordName
+        let file = directory.appendingPathComponent(ckRecordName)
+        return ckRecord.encodeSystemFields().save(to: file)
     }
     
     // MARK: - Deleting CloudKit Records
     
     // TODO: write unit test for deletion funcs
-    public func deleteCKRecords(with ids: [CKRecord.ID])
+    func deleteCKRecords(with ids: [CKRecord.ID])
     {
         ids.map
         {
@@ -72,12 +65,10 @@ public class CKRecordSystemFieldsCache
     
     // MARK: - Configuration
     
-    public init(directory: URL)
+    init(directory: URL)
     {
         self.directory = directory
     }
     
     private let directory: URL
 }
-
-

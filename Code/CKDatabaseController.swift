@@ -113,8 +113,12 @@ public class CKDatabaseController: Observable
     private func process(_ saveResult: CKDatabase.SaveResult)
     {
         ckRecordSystemFieldsCache.save(saveResult.successes)
-        ckRecordSystemFieldsCache.save(saveResult.conflicts.map({ $0.serverRecord }))
-        ckRecordSystemFieldsCache.deleteCKRecords(with: saveResult.failures.map({ $0.record.recordID }))
+        
+        let conflictingServerRecords = saveResult.conflicts.map { $0.serverRecord }
+        ckRecordSystemFieldsCache.save(conflictingServerRecords)
+        
+        let idsOfRecordsNotSaved = saveResult.failures.map { $0.record.recordID }
+        ckRecordSystemFieldsCache.deleteCKRecords(with: idsOfRecordsNotSaved)
     }
     
     public func deleteCKRecords(of type: CKRecord.RecordType,
@@ -145,7 +149,9 @@ public class CKDatabaseController: Observable
     private func process(_ result: CKDatabase.DeletionResult)
     {
         ckRecordSystemFieldsCache.deleteCKRecords(with: result.successes)
-        ckRecordSystemFieldsCache.deleteCKRecords(with: result.failures.map({ $0.recordID }))
+        
+        let idsOfRecordsNotDeleted = result.failures.map { $0.recordID }
+        ckRecordSystemFieldsCache.deleteCKRecords(with: idsOfRecordsNotDeleted)
     }
     
     // MARK: - System Fields Cache

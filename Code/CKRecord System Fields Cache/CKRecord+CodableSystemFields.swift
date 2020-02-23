@@ -2,7 +2,7 @@ import CloudKit
 
 public extension CKRecord
 {
-    convenience init?(fromSystemFieldEncoding data: Data?)
+    convenience init?(fromEncodedSystemFields data: Data?)
     {
         guard let data = data else { return nil }
         let decoder = NSKeyedUnarchiver(forReadingWith: data)
@@ -11,7 +11,7 @@ public extension CKRecord
         decoder.finishDecoding()
     }
     
-    var systemFieldEncoding: Data
+    func encodeSystemFields() -> Data
     {
         let data = NSMutableData()
         let encoder = NSKeyedArchiver(forWritingWith: data)
