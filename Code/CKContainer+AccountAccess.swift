@@ -29,7 +29,7 @@ public extension CKContainer
             if let errorMessage = errorMessage
             {
                 log(error: errorMessage)
-                throw ReadableError.message(errorMessage)
+                throw errorMessage
             }
         }
     }
