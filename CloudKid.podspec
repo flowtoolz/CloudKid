@@ -28,7 +28,7 @@
 
     # dependencies
     s.dependency 'FoundationToolz', '~> 1.0'
-    s.dependency 'SwiftObserver', '~> 5.1'
+    s.dependency 'SwiftObserver', '~> 6.0'
     s.dependency 'SwiftyToolz', '~> 1.5'
     s.dependency 'PromiseKit', '~> 6.9'
     
