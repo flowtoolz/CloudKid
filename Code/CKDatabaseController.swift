@@ -162,6 +162,11 @@ public class CKDatabaseController: Observable
         ckRecordSystemFieldsCache.getCKRecord(for: id, of: type)
     }
     
+    public func clearCachedSystemFields()
+    {
+        ckRecordSystemFieldsCache.clear()
+    }
+    
     private let ckRecordSystemFieldsCache: CKRecordSystemFieldsCache
 
     // MARK: - Basics: Container and Database

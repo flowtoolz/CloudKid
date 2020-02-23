@@ -63,6 +63,12 @@ class CKRecordSystemFieldsCache
         }
     }
     
+    func clear()
+    {
+        FileManager.default.remove(directory)
+        FileManager.default.ensureDirectoryExists(directory)
+    }
+    
     // MARK: - Configuration
     
     init(directory: URL)
