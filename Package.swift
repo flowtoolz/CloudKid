@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "CloudKid",
+    platforms: [.iOS(.v9), .tvOS(.v9), .macOS(.v10_12)],
     products: [
         .library(name: "CloudKid",
                  targets: ["CloudKid"]),
@@ -29,11 +30,11 @@ let package = Package(
     targets: [
         .target(name: "CloudKid",
                 dependencies: [
-			"FoundationToolz",
-			"SwiftObserver",
-			"SwiftyToolz",
-			"PromiseKit"
-		],
+                    "FoundationToolz",
+                    "SwiftObserver",
+                    "SwiftyToolz",
+                    "PromiseKit"
+                ],
                 path: "Code"),
     ]
 )
