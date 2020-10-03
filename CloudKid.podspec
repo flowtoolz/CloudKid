@@ -30,6 +30,6 @@
     s.dependency 'FoundationToolz', '~> 1.0'
     s.dependency 'SwiftObserver', '~> 6.0'
     s.dependency 'SwiftyToolz', '~> 1.5'
-    s.dependency 'PromiseKit', '~> 6.9'
+    s.dependency 'PromiseKit', '6.13.1'
     
 end
