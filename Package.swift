@@ -6,11 +6,13 @@ let package = Package(
     name: "CloudKid",
     platforms: [.iOS(.v9), .tvOS(.v9), .macOS(.v10_12)],
     products: [
-        .library(name: "CloudKid",
-                 targets: ["CloudKid"]),
+        .library(
+            name: "CloudKid",
+            targets: ["CloudKid"]
+        ),
     ],
     dependencies: [
-	.package(
+        .package(
             url: "https://github.com/flowtoolz/FoundationToolz.git",
             .branch("master")
         ),
@@ -28,13 +30,15 @@ let package = Package(
         ),
     ],
     targets: [
-        .target(name: "CloudKid",
-                dependencies: [
-                    "FoundationToolz",
-                    "SwiftObserver",
-                    "SwiftyToolz",
-                    "PromiseKit"
-                ],
-                path: "Code"),
+        .target(
+            name: "CloudKid",
+            dependencies: [
+                "FoundationToolz",
+                "SwiftObserver",
+                "SwiftyToolz",
+                "PromiseKit"
+            ],
+            path: "Code"
+        ),
     ]
 )
