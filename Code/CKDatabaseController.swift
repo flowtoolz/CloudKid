@@ -183,7 +183,7 @@ public class CKDatabaseController: Observable
     
     // MARK: - Observability of Database Notifications
     
-    public func handleDatabaseNotification(with userInfo: JSON)
+    public func handleDatabaseNotification(with userInfo: [String : Any])
     {
         guard let notification = CKNotification(fromRemoteNotificationDictionary: userInfo),
             notification.containerIdentifier == ckContainer.containerIdentifier
