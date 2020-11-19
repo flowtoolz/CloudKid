@@ -1,6 +1,0 @@
-framework module CloudKid {
-  umbrella header "CloudKid-umbrella.h"
-
-  export *
-  module * { export * }
-}

@@ -1,6 +1,0 @@
-framework module Pods_CloudKidDevelopment {
-  umbrella header "Pods-CloudKidDevelopment-umbrella.h"
-
-  export *
-  module * { export * }
-}
