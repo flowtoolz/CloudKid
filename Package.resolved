@@ -32,9 +32,9 @@
         "package": "SwiftObserver",
         "repositoryURL": "https://github.com/flowtoolz/SwiftObserver.git",
         "state": {
-          "branch": null,
-          "revision": "c520cfdf993360bcf0daaf18193adf3a3dbc547d",
-          "version": "6.0.0"
+          "branch": "master",
+          "revision": "d9cd49a14e8ef18cde7c4c355cb5ad3611af3ff2",
+          "version": null
         }
       },
       {

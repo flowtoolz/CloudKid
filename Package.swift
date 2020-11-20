@@ -18,7 +18,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/flowtoolz/SwiftObserver.git",
-            .exact("6.0.0")
+            .branch("master")
         ),
         .package(
             url: "https://github.com/flowtoolz/SwiftyToolz.git",
