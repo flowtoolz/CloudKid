@@ -11,9 +11,9 @@ public extension CKDatabase
         add(operation)
     }
     
-    func setTimeout<T>(of seconds: Double = CKDatabase.timeoutAfterSeconds,
+    func setTimeout(of seconds: Double = CKDatabase.timeoutAfterSeconds,
                        on operation: CKDatabaseOperation,
-                       or resolver: Resolver<T>)
+                       or handleTimeout: @escaping (ReadableError) -> Void)
     {
         if #available(OSX 10.13, *)
         {
@@ -22,9 +22,9 @@ public extension CKDatabase
         }
         else
         {
-            after(.seconds(Int(seconds))).done
+            queue.asyncAfter(deadline: .now() + .milliseconds(Int(seconds * 1000)))
             {
-                resolver.reject(ReadableError.message("iCloud database operation didn't respond and was cancelled after \(seconds) seconds."))
+                handleTimeout(.message("iCloud database operation didn't respond and was cancelled after \(seconds) seconds."))
             }
         }
     }

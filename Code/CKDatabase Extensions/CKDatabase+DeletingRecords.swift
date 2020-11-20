@@ -73,7 +73,7 @@ public extension CKDatabase
         {
             resolver in
             
-            setTimeout(on: operation, or: resolver)
+            setTimeout(on: operation, or: resolver.reject)
             
             operation.modifyRecordsCompletionBlock =
             {

@@ -56,7 +56,7 @@ public extension CKDatabase
             let queryOperation = CKQueryOperation(query: query)
             queryOperation.zoneID = zone
             
-            setTimeout(on: queryOperation, or: resolver)
+            setTimeout(on: queryOperation, or: resolver.reject)
             
             var records = [CKRecord]()
             
