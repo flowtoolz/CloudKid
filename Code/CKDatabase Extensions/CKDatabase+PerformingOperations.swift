@@ -12,8 +12,8 @@ public extension CKDatabase
     }
     
     func setTimeout(of seconds: Double = CKDatabase.timeoutAfterSeconds,
-                       on operation: CKDatabaseOperation,
-                       or handleTimeout: @escaping (ReadableError) -> Void)
+                    on operation: CKDatabaseOperation,
+                    or handleTimeout: @escaping (ReadableError) -> Void)
     {
         if #available(OSX 10.13, *)
         {

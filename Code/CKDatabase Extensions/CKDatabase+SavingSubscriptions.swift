@@ -1,16 +1,16 @@
 import CloudKit
-import PromiseKit
+import SwiftObserver
 import SwiftyToolz
 
 public extension CKDatabase
 {
-    func saveDatabaseSubscription(with id: CKSubscription.ID) -> Promise<CKSubscription>
+    func saveDatabaseSubscription(with id: CKSubscription.ID) -> SOPromise<Result<CKSubscription, Error>>
     {
         save(CKDatabaseSubscription(subscriptionID: id))
     }
     
     private func save(_ subscription: CKSubscription,
-                      desiredKeys: [CKRecord.FieldKey]? = nil) -> Promise<CKSubscription>
+                      desiredKeys: [CKRecord.FieldKey]? = nil) -> SOPromise<Result<CKSubscription, Error>>
     {
         let notificationInfo = CKSubscription.NotificationInfo()
         notificationInfo.shouldSendContentAvailable = true
@@ -20,20 +20,24 @@ public extension CKDatabase
         let operation = CKModifySubscriptionsOperation(subscriptionsToSave: [subscription],
                                                        subscriptionIDsToDelete: nil)
         
-        return Promise
+        return SOPromise
         {
-            resolver in
+            promise in
             
             operation.modifySubscriptionsCompletionBlock =
             {
                 savedSubscriptions, _, error in
                 
-                if let error = error
+                if let savedSubscription = savedSubscriptions?.first
                 {
-                    log(error: error.ckReadable.message)
+                    promise.fulfill(.success(savedSubscription))
                 }
-                
-                resolver.resolve(savedSubscriptions?.first, error?.ckReadable)
+                else
+                {
+                    let error = error ?? "Saving CKSubscription failed"
+                    log(error)
+                    promise.fulfill(.failure(error))
+                }
             }
             
             perform(operation)

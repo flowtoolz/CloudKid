@@ -1,20 +1,20 @@
 import CloudKit
-import PromiseKit
+import SwiftObserver
 import SwiftyToolz
 
 public extension CKContainer
 {
-    func ensureAccountAccess() -> Promise<Void>
+    func ensureAccountAccess() -> SOPromise<Result<Void, Error>>
     {
-        firstly
+        promise
         {
             fetchAccountStatus()
         }
-        .map(on: iCloudQueue)
+        .mapSuccess
         {
-            status -> Void in
-            
-            let errorMessage: String? =
+            status in
+           
+            let potentialErrorMessage: String? =
             {
                 switch status
                 {
@@ -26,19 +26,24 @@ public extension CKContainer
                 }
             }()
             
-            if let errorMessage = errorMessage
+            if let errorMessage = potentialErrorMessage
             {
-                log(error: errorMessage)
-                throw errorMessage
+                let error = ReadableError(errorMessage)
+                log(error)
+                return .failure(error)
+            }
+            else
+            {
+                return .success(())
             }
         }
     }
     
-    func fetchAccountStatus() -> Promise<CKAccountStatus>
+    func fetchAccountStatus() -> SOPromise<Result<CKAccountStatus, Error>>
     {
-        Promise
+        SOPromise
         {
-            resolver in
+            promise in
             
             accountStatus
             {
@@ -46,10 +51,13 @@ public extension CKContainer
                 
                 if let error = error
                 {
-                    log(error: error.ckReadable.message)
+                    log(error)
+                    promise.fulfill(.failure(error))
                 }
-                
-                resolver.resolve(status, error?.ckReadable)
+                else
+                {
+                    promise.fulfill(.success(status))
+                }
             }
         }
     }

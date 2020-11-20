@@ -1,30 +1,34 @@
 import CloudKit
-import PromiseKit
+import SwiftObserver
 import SwiftyToolz
 
 public extension CKDatabase
 {
-    func save(_ zone: CKRecordZone.ID) -> Promise<CKRecordZone>
+    func save(_ zone: CKRecordZone.ID) -> SOPromise<Result<CKRecordZone, Error>>
     {
         let recordZone = CKRecordZone(zoneID: zone)
         
         let operation = CKModifyRecordZonesOperation(recordZonesToSave: [recordZone],
                                                      recordZoneIDsToDelete: nil)
         
-        return Promise
+        return SOPromise
         {
-            resolver in
+            promise in
             
             operation.modifyRecordZonesCompletionBlock =
             {
                 createdZones, _, error in
                 
-                if let error = error
+                if let createdZone = createdZones?.first
                 {
-                    log(error: error.ckReadable.message)
+                    promise.fulfill(.success(createdZone))
                 }
-                
-                resolver.resolve(error?.ckReadable, createdZones?.first)
+                else
+                {
+                    let error = error ?? "Saving CKRecordZone failed"
+                    log(error)
+                    promise.fulfill(.failure(error))
+                }
             }
             
             perform(operation)

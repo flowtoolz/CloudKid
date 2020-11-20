@@ -30,17 +30,17 @@ public class CKDatabaseController: Observable
         ckRecordSystemFieldsCache = CKRecordSystemFieldsCache(directory: cacheDirectory)
     }
     
-    public func create(_ zone: CKRecordZone.ID) -> Promise<CKRecordZone>
+    public func create(_ zone: CKRecordZone.ID) -> SOPromise<Swift.Result<CKRecordZone, Error>>
     {
         ckDatabase.save(zone)
     }
     
-    public func createDatabaseSubscription(with id: CKSubscription.ID) -> Promise<CKSubscription>
+    public func createDatabaseSubscription(with id: CKSubscription.ID) -> SOPromise<Swift.Result<CKSubscription, Error>>
     {
         ckDatabase.saveDatabaseSubscription(with: id)
     }
     
-    public func ensureAccountAccess() -> Promise<Void>
+    public func ensureAccountAccess() -> SOPromise<Swift.Result<Void, Error>>
     {
         ckContainer.ensureAccountAccess()
     }
