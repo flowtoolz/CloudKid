@@ -38,7 +38,7 @@ public extension CKDatabase
         var successes = [CKRecord.ID]()
         var failures = [DeletionFailure]()
         
-        func deleteSequentially(_ handleCompletion: @escaping () -> Void)
+        func deleteBatchesSequentially(_ handleCompletion: @escaping () -> Void)
         {
             guard batches.count > 0 else { return handleCompletion() }
             
@@ -52,7 +52,7 @@ public extension CKDatabase
                     failures += deletionResult.failures
                 }
                 
-                deleteSequentially(handleCompletion)
+                deleteBatchesSequentially(handleCompletion)
             }
         }
         
@@ -60,7 +60,7 @@ public extension CKDatabase
         {
             promise in
             
-            deleteSequentially
+            deleteBatchesSequentially
             {
                 promise.fulfill(DeletionResult(successes: successes, failures: failures))
             }

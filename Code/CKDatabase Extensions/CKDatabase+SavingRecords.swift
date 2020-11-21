@@ -1,15 +1,15 @@
 import CloudKit
-import PromiseKit
+import SwiftObserver
 import SwiftyToolz
 
 public extension CKDatabase
 {
-    func save(_ records: [CKRecord]) -> Promise<SaveResult>
+    func save(_ records: [CKRecord]) -> SOPromise<Result<SaveResult, Error>>
     {
         guard !records.isEmpty else
         {
             log(warning: "Tried to save empty array of CKRecords.")
-            return .value(.empty)
+            return .fulfilled(.empty)
         }
         
         return records.count > maxBatchSize
@@ -17,25 +17,24 @@ public extension CKDatabase
             : saveInOneBatch(records)
     }
     
-    private func saveInBatches(_ records: [CKRecord]) -> Promise<SaveResult>
+    private func saveInBatches(_ records: [CKRecord]) -> SOPromise<Result<SaveResult, Error>>
     {
-        let batches = records.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
-        let batchPromises = batches.map(saveInOneBatch)
-        
-        var sequentialBatches = Promise()
+        var batches = records.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
         
         var successes = [CKRecord]()
         var failures = [SaveFailure]()
         var conflicts = [SaveConflict]()
         
-        for batchPromise in batchPromises
+        func saveBatchesSequentially(_ handleCompletion: @escaping () -> Void)
         {
-            sequentialBatches = sequentialBatches.then
+            guard batches.count > 0 else { return handleCompletion() }
+            
+            let batch = batches.remove(at: 0)
+            
+            saveInOneBatch(batch).observedOnce
             {
-                batchPromise.done
+                if case .success(let saveResult) = $0
                 {
-                    saveResult in
-                    
                     successes += saveResult.successes
                     failures += saveResult.failures
                     conflicts += saveResult.conflicts
@@ -43,13 +42,21 @@ public extension CKDatabase
             }
         }
         
-        return sequentialBatches.map
+        
+        return SOPromise
         {
-            SaveResult(successes: successes, conflicts: conflicts, failures: failures)
+            promise in
+            
+            saveBatchesSequentially
+            {
+                promise.fulfill(SaveResult(successes: successes,
+                                           conflicts: conflicts,
+                                           failures: failures))
+            }
         }
     }
 
-    private func saveInOneBatch(_ records: [CKRecord]) -> Promise<SaveResult>
+    private func saveInOneBatch(_ records: [CKRecord]) -> SOPromise<Result<SaveResult, Error>>
     {
         let operation = CKModifyRecordsOperation(recordsToSave: records,
                                                  recordIDsToDelete: nil)
@@ -73,11 +80,11 @@ public extension CKDatabase
             }
         }
         
-        return Promise
+        return SOPromise
         {
-            resolver in
+            promise in
             
-            setTimeout(on: operation, or: resolver.reject)
+            setTimeout(on: operation, or: promise.fulfill)
             
             operation.modifyRecordsCompletionBlock =
             {
@@ -85,11 +92,11 @@ public extension CKDatabase
                 
                 if let error = error
                 {
-                    log(error: error.ckReadable.message)
+                    log(error.ckReadable)
                     
                     if error.ckError?.code != .partialFailure
                     {
-                        return resolver.reject(error.ckReadable)
+                        return promise.fulfill(error.ckReadable)
                     }
                 }
                 
@@ -97,7 +104,7 @@ public extension CKDatabase
                                         conflicts: conflicts,
                                         failures: failures)
                 
-                resolver.fulfill(result)
+                promise.fulfill(result)
             }
             
             perform(operation)

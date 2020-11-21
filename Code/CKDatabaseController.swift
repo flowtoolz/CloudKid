@@ -1,5 +1,4 @@
 import CloudKit
-import PromiseKit
 import SwiftObserver
 import SwiftyToolz
 
@@ -30,17 +29,17 @@ public class CKDatabaseController: Observable
         ckRecordSystemFieldsCache = CKRecordSystemFieldsCache(directory: cacheDirectory)
     }
     
-    public func create(_ zone: CKRecordZone.ID) -> SOPromise<Swift.Result<CKRecordZone, Error>>
+    public func create(_ zone: CKRecordZone.ID) -> SOPromise<Result<CKRecordZone, Error>>
     {
         ckDatabase.save(zone)
     }
     
-    public func createDatabaseSubscription(with id: CKSubscription.ID) -> SOPromise<Swift.Result<CKSubscription, Error>>
+    public func createDatabaseSubscription(with id: CKSubscription.ID) -> SOPromise<Result<CKSubscription, Error>>
     {
         ckDatabase.saveDatabaseSubscription(with: id)
     }
     
-    public func ensureAccountAccess() -> SOPromise<Swift.Result<Void, Error>>
+    public func ensureAccountAccess() -> SOPromise<Result<Void, Error>>
     {
         ckContainer.ensureAccountAccess()
     }
@@ -48,7 +47,7 @@ public class CKDatabaseController: Observable
     // MARK: - Fetch
     
     public func queryCKRecords(of type: CKRecord.RecordType,
-                               in zone: CKRecordZone.ID) -> SOPromise<Swift.Result<[CKRecord], Error>>
+                               in zone: CKRecordZone.ID) -> SOPromise<Result<[CKRecord], Error>>
     {
         let queryPromise = ckDatabase.queryCKRecords(of: type, in: zone)
             
@@ -65,7 +64,7 @@ public class CKDatabaseController: Observable
     }
     
     public func perform(_ query: CKQuery,
-                        in zone: CKRecordZone.ID) -> SOPromise<Swift.Result<[CKRecord], Error>>
+                        in zone: CKRecordZone.ID) -> SOPromise<Result<[CKRecord], Error>>
     {
         let queryPromise = ckDatabase.perform(query, in: zone)
         
@@ -82,7 +81,7 @@ public class CKDatabaseController: Observable
     }
     
     public func fetchChanges(from zone: CKRecordZone.ID)
-        -> SOPromise<Swift.Result<CKDatabase.Changes, Error>>
+        -> SOPromise<Result<CKDatabase.Changes, Error>>
     {
         let fetchPromise = ckDatabase.fetchChanges(from: zone)
         
@@ -108,16 +107,17 @@ public class CKDatabaseController: Observable
     
     // MARK: - Save and Delete
     
-    public func save(_ records: [CKRecord]) -> Promise<CKDatabase.SaveResult>
+    public func save(_ records: [CKRecord]) -> SOPromise<Result<CKDatabase.SaveResult, Error>>
     {
-        firstly
-        {
-            ckDatabase.save(records)
-        }
-        .get(on: ckDatabase.queue)
+        let savePromise = ckDatabase.save(records)
+        
+        savePromise.observedSuccess
         {
             self.process($0)
         }
+        failure: { _ in }
+        
+        return savePromise
     }
     
     private func process(_ saveResult: CKDatabase.SaveResult)
@@ -133,7 +133,7 @@ public class CKDatabaseController: Observable
     
     public func deleteCKRecords(of type: CKRecord.RecordType,
                                 in zone: CKRecordZone.ID)
-        -> SOPromise<Swift.Result<CKDatabase.DeletionResult, Error>>
+        -> SOPromise<Result<CKDatabase.DeletionResult, Error>>
     {
         let deletionPromise = ckDatabase.deleteCKRecords(of: type, in: zone)
         
@@ -147,7 +147,7 @@ public class CKDatabaseController: Observable
     }
     
     public func deleteCKRecords(with ids: [CKRecord.ID])
-        -> SOPromise<Swift.Result<CKDatabase.DeletionResult, Error>>
+        -> SOPromise<Result<CKDatabase.DeletionResult, Error>>
     {
         let deletionPromise = ckDatabase.deleteCKRecords(with: ids)
         
