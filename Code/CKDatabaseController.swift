@@ -158,7 +158,7 @@ public class CKDatabaseController: Observable
     {
         ckRecordSystemFieldsCache.deleteCKRecords(with: result.successes)
         
-        let idsOfRecordsNotDeleted = result.failures.map { $0.recordID }
+        let idsOfRecordsNotDeleted = result.partialFailures.map { $0.recordID }
         ckRecordSystemFieldsCache.deleteCKRecords(with: idsOfRecordsNotDeleted)
     }
     

@@ -41,7 +41,7 @@ public extension CKDatabase
         var batches = ids.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
         
         var successes = [CKRecord.ID]()
-        var failures = [DeletionFailure]()
+        var partialFailures = [DeletionResult.PartialFailure]()
         var nonPartialErrors = [Error]()
         
         func deleteBatchesSequentially(_ handleCompletion: @escaping () -> Void)
@@ -55,7 +55,7 @@ public extension CKDatabase
                 deletionResult in
                 
                 successes += deletionResult.successes
-                failures += deletionResult.failures
+                partialFailures += deletionResult.partialFailures
                 nonPartialErrors += deletionResult.nonPartialErrors
                 
                 deleteBatchesSequentially(handleCompletion)
@@ -65,7 +65,7 @@ public extension CKDatabase
         deleteBatchesSequentially
         {
             handleResult(DeletionResult(successes: successes,
-                                        failures: failures,
+                                        partialFailures: partialFailures,
                                         nonPartialErrors: nonPartialErrors))
         }
     }
@@ -84,7 +84,7 @@ public extension CKDatabase
             _, idsOfDeletedRecords, error in
             
             let successes = idsOfDeletedRecords ?? []
-            var failures = [DeletionFailure]()
+            var partialFailures = [DeletionResult.PartialFailure]()
             var nonPartialErrors = [Error]()
             
             if let error = error
@@ -93,7 +93,7 @@ public extension CKDatabase
                 
                 if error.ckError?.code == .partialFailure
                 {
-                    failures = self.partialDeletionFailures(from: error)
+                    partialFailures = self.partialFailures(from: error)
                 }
                 else
                 {
@@ -102,50 +102,50 @@ public extension CKDatabase
             }
             
             handleResult(DeletionResult(successes: successes,
-                                        failures: failures,
+                                        partialFailures: partialFailures,
                                         nonPartialErrors: nonPartialErrors))
         }
         
         perform(operation)
     }
     
-    private func partialDeletionFailures(from error: Error) -> [DeletionFailure]
+    private func partialFailures(from error: Error) -> [DeletionResult.PartialFailure]
     {
         guard let ckError = error.ckError,
             ckError.code == .partialFailure,
             let errorsByID = ckError.partialErrorsByItemID,
             let errorsByRecordID = errorsByID as? [CKRecord.ID : Error] else { return [] }
         
-        return errorsByRecordID.map { DeletionFailure($0.0, $0.1) }
+        return errorsByRecordID.map { DeletionResult.PartialFailure($0.0, $0.1) }
     }
     
     struct DeletionResult
     {
         public static var empty: DeletionResult
         {
-            DeletionResult(successes: [], failures: [], nonPartialErrors: [])
+            DeletionResult(successes: [], partialFailures: [], nonPartialErrors: [])
         }
         
         public static func error(_ error: Error) -> DeletionResult
         {
-            DeletionResult(successes: [], failures: [], nonPartialErrors: [error])
+            DeletionResult(successes: [], partialFailures: [], nonPartialErrors: [error])
         }
         
         public let successes: [CKRecord.ID]
-        public let failures: [DeletionFailure]
+        public let partialFailures: [PartialFailure]
         public let nonPartialErrors: [Error]
-    }
-
-    struct DeletionFailure
-    {
-        init(_ id: CKRecord.ID, _ error: Error)
-        {
-            self.recordID = id
-            self.error = error
-        }
         
-        public let recordID: CKRecord.ID
-        public let error: Error
+        public struct PartialFailure
+        {
+            init(_ id: CKRecord.ID, _ error: Error)
+            {
+                self.recordID = id
+                self.error = error
+            }
+            
+            public let recordID: CKRecord.ID
+            public let error: Error
+        }
     }
 }
 
