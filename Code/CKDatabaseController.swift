@@ -147,16 +147,10 @@ public class CKDatabaseController: Observable
     }
     
     public func deleteCKRecords(with ids: [CKRecord.ID])
-        -> SOPromise<Result<CKDatabase.DeletionResult, Error>>
+        -> SOPromise<CKDatabase.DeletionResult>
     {
         let deletionPromise = ckDatabase.deleteCKRecords(with: ids)
-        
-        deletionPromise.observedSuccess
-        {
-            self.process($0)
-        }
-        failure: { _ in }
-        
+        deletionPromise.observedOnce(self.process)
         return deletionPromise
     }
     

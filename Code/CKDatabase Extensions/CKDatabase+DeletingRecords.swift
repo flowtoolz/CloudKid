@@ -11,13 +11,17 @@ public extension CKDatabase
         {
             queryCKRecords(of: type, in: zone)
         }
+        .mapSuccess
+        {
+            .success($0.map { $0.recordID })
+        }
         .onSuccess
         {
-            self.deleteCKRecords(with: $0.map { $0.recordID })
+            self.deleteCKRecords(with: $0).map { .success($0) }
         }
     }
     
-    func deleteCKRecords(with ids: [CKRecord.ID]) -> SOPromise<Result<DeletionResult, Error>>
+    func deleteCKRecords(with ids: [CKRecord.ID]) -> SOPromise<DeletionResult>
     {
         guard !ids.isEmpty else
         {
@@ -25,18 +29,20 @@ public extension CKDatabase
             return .fulfilled(.empty)
         }
         
-        return ids.count > maxBatchSize
-            ? deleteCKRecordsInBatches(with: ids)
-            : deleteCKRecordsInOneBatch(with: ids)
+        let call = ids.count > maxBatchSize ? deleteCKRecordsInBatches : deleteCKRecordsInOneBatch
+        
+        return SOPromise { call(ids, $0.fulfill) }
     }
     
-    private func deleteCKRecordsInBatches(with ids: [CKRecord.ID])
-        -> SOPromise<Result<DeletionResult, Error>>
+    private func deleteCKRecordsInBatches(
+        with ids: [CKRecord.ID],
+        handleResult: @escaping (DeletionResult) -> Void)
     {
         var batches = ids.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
         
         var successes = [CKRecord.ID]()
         var failures = [DeletionFailure]()
+        var nonPartialErrors = [Error]()
         
         func deleteBatchesSequentially(_ handleCompletion: @escaping () -> Void)
         {
@@ -44,69 +50,68 @@ public extension CKDatabase
             
             let batch = batches.remove(at: 0)
             
-            deleteCKRecordsInOneBatch(with: batch).observedOnce
+            deleteCKRecordsInOneBatch(with: batch)
             {
-                if case .success(let deletionResult) = $0
-                {
-                    successes += deletionResult.successes
-                    failures += deletionResult.failures
-                }
+                deletionResult in
+                
+                successes += deletionResult.successes
+                failures += deletionResult.failures
+                nonPartialErrors += deletionResult.nonPartialErrors
                 
                 deleteBatchesSequentially(handleCompletion)
             }
         }
         
-        return SOPromise
+        deleteBatchesSequentially
         {
-            promise in
-            
-            deleteBatchesSequentially
-            {
-                promise.fulfill(DeletionResult(successes: successes, failures: failures))
-            }
+            handleResult(DeletionResult(successes: successes,
+                                        failures: failures,
+                                        nonPartialErrors: nonPartialErrors))
         }
     }
 
-    private func deleteCKRecordsInOneBatch(with ids: [CKRecord.ID])
-        -> SOPromise<Result<DeletionResult, Error>>
+    private func deleteCKRecordsInOneBatch(
+        with ids: [CKRecord.ID],
+        handleResult: @escaping (DeletionResult) -> Void)
     {
         let operation = CKModifyRecordsOperation(recordsToSave: nil,
                                                  recordIDsToDelete: ids)
         
-        return SOPromise
+        setTimeout(on: operation) { handleResult(.error($0)) }
+        
+        operation.modifyRecordsCompletionBlock =
         {
-            promise in
+            _, idsOfDeletedRecords, error in
             
-            setTimeout(on: operation, or: promise.fulfill)
+            let successes = idsOfDeletedRecords ?? []
+            var failures = [DeletionFailure]()
+            var nonPartialErrors = [Error]()
             
-            operation.modifyRecordsCompletionBlock =
+            if let error = error
             {
-                _, idsOfDeletedRecords, error in
+                log(error.ckReadable)
                 
-                if let error = error
+                if error.ckError?.code == .partialFailure
                 {
-                    log(error: error.ckReadable.message)
-                    
-                    if error.ckError?.code != .partialFailure
-                    {
-                        return promise.fulfill(error.ckReadable)
-                    }
+                    failures = self.partialDeletionFailures(from: error)
                 }
-                
-                let successes = idsOfDeletedRecords ?? []
-                let failures = self.partialDeletionFailures(from: error)
-                let result = DeletionResult(successes: successes, failures: failures)
-                
-                promise.fulfill(result)
+                else
+                {
+                    nonPartialErrors = [error]
+                }
             }
             
-            perform(operation)
+            handleResult(DeletionResult(successes: successes,
+                                        failures: failures,
+                                        nonPartialErrors: nonPartialErrors))
         }
+        
+        perform(operation)
     }
     
-    private func partialDeletionFailures(from error: Error?) -> [DeletionFailure]
+    private func partialDeletionFailures(from error: Error) -> [DeletionFailure]
     {
-        guard let ckError = error?.ckError,
+        guard let ckError = error.ckError,
             ckError.code == .partialFailure,
             let errorsByID = ckError.partialErrorsByItemID,
             let errorsByRecordID = errorsByID as? [CKRecord.ID : Error] else { return [] }
@@ -118,11 +123,17 @@ public extension CKDatabase
     {
         public static var empty: DeletionResult
         {
-            DeletionResult(successes: [], failures: [])
+            DeletionResult(successes: [], failures: [], nonPartialErrors: [])
+        }
+        
+        public static func error(_ error: Error) -> DeletionResult
+        {
+            DeletionResult(successes: [], failures: [], nonPartialErrors: [error])
         }
         
         public let successes: [CKRecord.ID]
         public let failures: [DeletionFailure]
+        public let nonPartialErrors: [Error]
     }
 
     struct DeletionFailure
