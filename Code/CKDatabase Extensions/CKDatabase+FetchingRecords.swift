@@ -1,10 +1,10 @@
 import CloudKit
-import PromiseKit
+import SwiftObserver
 import SwiftyToolz
 
 public extension CKDatabase
 {
-    func fetchCKRecords(with ids: [CKRecord.ID]) -> Promise<[CKRecord]>
+    func fetchCKRecords(with ids: [CKRecord.ID]) -> SOPromise<Result<[CKRecord], Error>>
     {
         let operation = CKFetchRecordsOperation(recordIDs: ids)
         
@@ -15,28 +15,26 @@ public extension CKDatabase
             // for overall progress updates
         }
         
-        return Promise
+        return SOPromise
         {
-            resolver in
+            promise in
             
-            setTimeout(on: operation, or: resolver.reject)
+            setTimeout(on: operation, or: promise.fulfill)
 
             operation.fetchRecordsCompletionBlock =
             {
                 recordsByID, error in
                 
-                if let error = error
+                if let recordsByID = recordsByID
                 {
-                    log(error: error.ckReadable.message)
+                    promise.fulfill(Array(recordsByID.values))
                 }
-                
-                guard let recordsByID = recordsByID else
+                else
                 {
-                    resolver.resolve([], error?.ckReadable)
-                    return
+                    let error: Error = error?.ckError ?? "Fetching CKRecords failed"
+                    log(error)
+                    promise.fulfill(error)
                 }
-        
-                resolver.resolve(Array(recordsByID.values), error?.ckReadable)
             }
             
             perform(operation)
