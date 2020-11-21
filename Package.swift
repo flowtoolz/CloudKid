@@ -23,11 +23,7 @@ let package = Package(
         .package(
             url: "https://github.com/flowtoolz/SwiftyToolz.git",
             .branch("master")
-        ),
-        .package(
-            url: "https://github.com/mxcl/PromiseKit.git",
-            .upToNextMajor(from: "6.13.1")
-        ),
+        )
     ],
     targets: [
         .target(
@@ -35,8 +31,7 @@ let package = Package(
             dependencies: [
                 "FoundationToolz",
                 "SwiftObserver",
-                "SwiftyToolz",
-                "PromiseKit"
+                "SwiftyToolz"
             ],
             path: "Code"
         ),
