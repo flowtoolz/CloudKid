@@ -4,7 +4,7 @@ import SwiftyToolz
 
 public extension CKDatabase
 {
-    func save(_ records: [CKRecord]) -> SOPromise<Result<SaveResult, Error>>
+    func save(_ records: [CKRecord]) -> ResultPromise<SaveResult>
     {
         guard !records.isEmpty else
         {
@@ -17,7 +17,7 @@ public extension CKDatabase
             : saveInOneBatch(records)
     }
     
-    private func saveInBatches(_ records: [CKRecord]) -> SOPromise<Result<SaveResult, Error>>
+    private func saveInBatches(_ records: [CKRecord]) -> ResultPromise<SaveResult>
     {
         var batches = records.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
         
@@ -56,7 +56,7 @@ public extension CKDatabase
         }
     }
 
-    private func saveInOneBatch(_ records: [CKRecord]) -> SOPromise<Result<SaveResult, Error>>
+    private func saveInOneBatch(_ records: [CKRecord]) -> ResultPromise<SaveResult>
     {
         let operation = CKModifyRecordsOperation(recordsToSave: records,
                                                  recordIDsToDelete: nil)

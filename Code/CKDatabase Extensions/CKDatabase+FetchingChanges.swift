@@ -6,7 +6,7 @@ public extension CKDatabase
 {
     // MARK: - Fetch Changes
     
-    func fetchChanges(from zone: CKRecordZone.ID) -> SOPromise<Result<Changes, Error>>
+    func fetchChanges(from zone: CKRecordZone.ID) -> ResultPromise<Changes>
     {
         let token = changeToken(for: zone)
         

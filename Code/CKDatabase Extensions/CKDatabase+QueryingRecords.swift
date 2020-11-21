@@ -6,14 +6,14 @@ import SwiftyToolz
 public extension CKDatabase
 {
     func queryCKRecords(of type: CKRecord.RecordType,
-                        in zone: CKRecordZone.ID) -> SOPromise<Result<[CKRecord], Error>>
+                        in zone: CKRecordZone.ID) -> ResultPromise<[CKRecord]>
     {
         let query = CKQuery(recordType: type, predicate: .all)
         return perform(query, in: zone)
     }
     
     func perform(_ query: CKQuery,
-                 in zone: CKRecordZone.ID) -> SOPromise<Result<[CKRecord], Error>>
+                 in zone: CKRecordZone.ID) -> ResultPromise<[CKRecord]>
     {
         perform(query, in: zone, cursor: nil)
     }
@@ -22,7 +22,7 @@ public extension CKDatabase
         _ query: CKQuery,
         in zone: CKRecordZone.ID,
         cursor: CKQueryOperation.Cursor?)
-        -> SOPromise<Result<[CKRecord], Error>>
+        -> ResultPromise<[CKRecord]>
     {
         promise
         {
@@ -30,7 +30,7 @@ public extension CKDatabase
         }
         .onSuccess
         {
-            (records, newCursor) -> SOPromise<Result<[CKRecord], Error>> in
+            (records, newCursor) -> ResultPromise<[CKRecord]> in
             
             guard let newCursor = newCursor else
             {
@@ -43,7 +43,7 @@ public extension CKDatabase
             }
             .mapSuccess
             {
-                .success(records + $0)
+                records + $0
             }
         }
     }
@@ -53,7 +53,7 @@ public extension CKDatabase
         in zone: CKRecordZone.ID,
         cursor: CKQueryOperation.Cursor?
     )
-        -> SOPromise<Result<([CKRecord], CKQueryOperation.Cursor?), Error>>
+        -> ResultPromise<([CKRecord], CKQueryOperation.Cursor?)>
     {
         SOPromise
         {

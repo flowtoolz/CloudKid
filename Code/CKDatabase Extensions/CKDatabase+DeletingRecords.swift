@@ -5,7 +5,7 @@ import SwiftyToolz
 public extension CKDatabase
 {
     func deleteCKRecords(of type: CKRecord.RecordType,
-                         in zone: CKRecordZone.ID) -> SOPromise<Result<DeletionResult, Error>>
+                         in zone: CKRecordZone.ID) -> ResultPromise<DeletionResult>
     {
         promise
         {
@@ -13,7 +13,7 @@ public extension CKDatabase
         }
         .mapSuccess
         {
-            .success($0.map { $0.recordID })
+            $0.map { $0.recordID }
         }
         .onSuccess
         {

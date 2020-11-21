@@ -4,7 +4,7 @@ import SwiftyToolz
 
 public extension CKDatabase
 {
-    func fetchCKRecords(with ids: [CKRecord.ID]) -> SOPromise<Result<[CKRecord], Error>>
+    func fetchCKRecords(with ids: [CKRecord.ID]) -> ResultPromise<[CKRecord]>
     {
         let operation = CKFetchRecordsOperation(recordIDs: ids)
         

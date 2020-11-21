@@ -4,7 +4,7 @@ import SwiftyToolz
 
 public extension CKContainer
 {
-    func ensureAccountAccess() -> SOPromise<Result<Void, Error>>
+    func ensureAccountAccess() -> ResultPromise<Void>
     {
         promise
         {
@@ -30,16 +30,12 @@ public extension CKContainer
             {
                 let error = ReadableError(errorMessage)
                 log(error)
-                return .failure(error)
-            }
-            else
-            {
-                return .success(())
+                throw error
             }
         }
     }
     
-    func fetchAccountStatus() -> SOPromise<Result<CKAccountStatus, Error>>
+    func fetchAccountStatus() -> ResultPromise<CKAccountStatus>
     {
         SOPromise
         {

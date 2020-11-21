@@ -4,13 +4,14 @@ import SwiftyToolz
 
 public extension CKDatabase
 {
-    func saveDatabaseSubscription(with id: CKSubscription.ID) -> SOPromise<Result<CKSubscription, Error>>
+    func saveDatabaseSubscription(with id: CKSubscription.ID) -> ResultPromise<CKSubscription>
     {
         save(CKDatabaseSubscription(subscriptionID: id))
     }
     
-    private func save(_ subscription: CKSubscription,
-                      desiredKeys: [CKRecord.FieldKey]? = nil) -> SOPromise<Result<CKSubscription, Error>>
+    private func save(
+        _ subscription: CKSubscription,
+        desiredKeys: [CKRecord.FieldKey]? = nil) -> ResultPromise<CKSubscription>
     {
         let notificationInfo = CKSubscription.NotificationInfo()
         notificationInfo.shouldSendContentAvailable = true
