@@ -1,32 +1,28 @@
 import CloudKit
-import PromiseKit
+import SwiftObserver
 import SwiftyToolz
 
 public extension CKDatabase
 {
     func deleteCKRecords(of type: CKRecord.RecordType,
-                         in zone: CKRecordZone.ID) -> Promise<DeletionResult>
+                         in zone: CKRecordZone.ID) -> SOPromise<Result<DeletionResult, Error>>
     {
-        firstly
+        promise
         {
             queryCKRecords(of: type, in: zone)
         }
-        .map(on: queue)
+        .onSuccess
         {
-            $0.map { $0.recordID }
-        }
-        .then(on: queue)
-        {
-            self.deleteCKRecords(with: $0)
+            self.deleteCKRecords(with: $0.map { $0.recordID })
         }
     }
     
-    func deleteCKRecords(with ids: [CKRecord.ID]) -> Promise<DeletionResult>
+    func deleteCKRecords(with ids: [CKRecord.ID]) -> SOPromise<Result<DeletionResult, Error>>
     {
         guard !ids.isEmpty else
         {
             log(warning: "Tried to delete CKRecords with empty array of IDs.")
-            return .value(.empty)
+            return .fulfilled(.empty)
         }
         
         return ids.count > maxBatchSize
@@ -34,46 +30,54 @@ public extension CKDatabase
             : deleteCKRecordsInOneBatch(with: ids)
     }
     
-    private func deleteCKRecordsInBatches(with ids: [CKRecord.ID]) -> Promise<DeletionResult>
+    private func deleteCKRecordsInBatches(with ids: [CKRecord.ID])
+        -> SOPromise<Result<DeletionResult, Error>>
     {
-        let batches = ids.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
-        let batchPromises = batches.map(deleteCKRecordsInOneBatch)
+        var batches = ids.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
         
         var successes = [CKRecord.ID]()
         var failures = [DeletionFailure]()
         
-        var sequentialBatches = Promise()
-        
-        for batchPromise in batchPromises
+        func deleteSequentially(_ handleCompletion: @escaping () -> Void)
         {
-            sequentialBatches = sequentialBatches.then
+            guard batches.count > 0 else { return handleCompletion() }
+            
+            let batch = batches.remove(at: 0)
+            
+            deleteCKRecordsInOneBatch(with: batch).observedOnce
             {
-                batchPromise.done
+                if case .success(let deletionResult) = $0
                 {
-                    deletionResult in
-                    
                     successes += deletionResult.successes
                     failures += deletionResult.failures
                 }
+                
+                deleteSequentially(handleCompletion)
             }
         }
         
-        return sequentialBatches.map
+        return SOPromise
         {
-            DeletionResult(successes: successes, failures: failures)
+            promise in
+            
+            deleteSequentially
+            {
+                promise.fulfill(DeletionResult(successes: successes, failures: failures))
+            }
         }
     }
 
-    private func deleteCKRecordsInOneBatch(with ids: [CKRecord.ID]) -> Promise<DeletionResult>
+    private func deleteCKRecordsInOneBatch(with ids: [CKRecord.ID])
+        -> SOPromise<Result<DeletionResult, Error>>
     {
         let operation = CKModifyRecordsOperation(recordsToSave: nil,
                                                  recordIDsToDelete: ids)
         
-        return Promise
+        return SOPromise
         {
-            resolver in
+            promise in
             
-            setTimeout(on: operation, or: resolver.reject)
+            setTimeout(on: operation, or: promise.fulfill)
             
             operation.modifyRecordsCompletionBlock =
             {
@@ -85,7 +89,7 @@ public extension CKDatabase
                     
                     if error.ckError?.code != .partialFailure
                     {
-                        return resolver.reject(error.ckReadable)
+                        return promise.fulfill(error.ckReadable)
                     }
                 }
                 
@@ -93,7 +97,7 @@ public extension CKDatabase
                 let failures = self.partialDeletionFailures(from: error)
                 let result = DeletionResult(successes: successes, failures: failures)
                 
-                resolver.fulfill(result)
+                promise.fulfill(result)
             }
             
             perform(operation)

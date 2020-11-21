@@ -48,42 +48,52 @@ public class CKDatabaseController: Observable
     // MARK: - Fetch
     
     public func queryCKRecords(of type: CKRecord.RecordType,
-                               in zone: CKRecordZone.ID) -> Promise<[CKRecord]>
+                               in zone: CKRecordZone.ID) -> SOPromise<Swift.Result<[CKRecord], Error>>
     {
-        firstly
-        {
-            ckDatabase.queryCKRecords(of: type, in: zone)
-        }
-        .get(on: ckDatabase.queue)
+        let queryPromise = ckDatabase.queryCKRecords(of: type, in: zone)
+            
+        queryPromise.observedSuccess
         {
             self.ckRecordSystemFieldsCache.save($0)
         }
+        failure:
+        {
+            log($0)
+        }
+        
+        return queryPromise
     }
     
     public func perform(_ query: CKQuery,
-                        in zone: CKRecordZone.ID) -> Promise<[CKRecord]>
+                        in zone: CKRecordZone.ID) -> SOPromise<Swift.Result<[CKRecord], Error>>
     {
-        firstly
-        {
-            ckDatabase.perform(query, in: zone)
-        }
-        .get(on: ckDatabase.queue)
+        let queryPromise = ckDatabase.perform(query, in: zone)
+        
+        queryPromise.observedSuccess
         {
             self.ckRecordSystemFieldsCache.save($0)
         }
+        failure:
+        {
+            log($0)
+        }
+        
+        return queryPromise
     }
     
-    public func fetchChanges(from zone: CKRecordZone.ID) -> Promise<CKDatabase.Changes>
+    public func fetchChanges(from zone: CKRecordZone.ID)
+        -> SOPromise<Swift.Result<CKDatabase.Changes, Error>>
     {
-        firstly
-        {
-            ckDatabase.fetchChanges(from: zone)
-        }
-        .get(on: ckDatabase.queue)
+        let fetchPromise = ckDatabase.fetchChanges(from: zone)
+        
+        fetchPromise.observedSuccess
         {
             self.ckRecordSystemFieldsCache.save($0.changedCKRecords)
             self.ckRecordSystemFieldsCache.deleteCKRecords(with: $0.idsOfDeletedCKRecords)
         }
+        failure: { _ in }
+        
+        return fetchPromise
     }
     
     public func hasChangeToken(for zone: CKRecordZone.ID) -> Bool
@@ -122,28 +132,32 @@ public class CKDatabaseController: Observable
     }
     
     public func deleteCKRecords(of type: CKRecord.RecordType,
-                                in zone: CKRecordZone.ID) -> Promise<CKDatabase.DeletionResult>
+                                in zone: CKRecordZone.ID)
+        -> SOPromise<Swift.Result<CKDatabase.DeletionResult, Error>>
     {
-        firstly
-        {
-            ckDatabase.deleteCKRecords(of: type, in: zone)
-        }
-        .get(on: ckDatabase.queue)
+        let deletionPromise = ckDatabase.deleteCKRecords(of: type, in: zone)
+        
+        deletionPromise.observedSuccess
         {
             self.process($0)
         }
+        failure: { _ in }
+        
+        return deletionPromise
     }
     
-    public func deleteCKRecords(with ids: [CKRecord.ID]) -> Promise<CKDatabase.DeletionResult>
+    public func deleteCKRecords(with ids: [CKRecord.ID])
+        -> SOPromise<Swift.Result<CKDatabase.DeletionResult, Error>>
     {
-        firstly
-        {
-            ckDatabase.deleteCKRecords(with: ids)
-        }
-        .get(on: ckDatabase.queue)
+        let deletionPromise = ckDatabase.deleteCKRecords(with: ids)
+        
+        deletionPromise.observedSuccess
         {
             self.process($0)
         }
+        failure: { _ in }
+        
+        return deletionPromise
     }
     
     private func process(_ result: CKDatabase.DeletionResult)

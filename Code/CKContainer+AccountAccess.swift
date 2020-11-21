@@ -52,11 +52,11 @@ public extension CKContainer
                 if let error = error
                 {
                     log(error)
-                    promise.fulfill(.failure(error))
+                    promise.fulfill(error)
                 }
                 else
                 {
-                    promise.fulfill(.success(status))
+                    promise.fulfill(status)
                 }
             }
         }

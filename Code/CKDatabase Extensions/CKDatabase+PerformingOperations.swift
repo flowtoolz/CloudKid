@@ -1,5 +1,4 @@
 import CloudKit
-import PromiseKit
 import SwiftyToolz
 
 public extension CKDatabase

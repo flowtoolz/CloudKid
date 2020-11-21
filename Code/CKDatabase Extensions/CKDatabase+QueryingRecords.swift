@@ -1,62 +1,68 @@
 import CloudKit
 import FoundationToolz
+import SwiftObserver
 import SwiftyToolz
-import PromiseKit
 
 public extension CKDatabase
 {
     func queryCKRecords(of type: CKRecord.RecordType,
-                        in zone: CKRecordZone.ID) -> Promise<[CKRecord]>
+                        in zone: CKRecordZone.ID) -> SOPromise<Result<[CKRecord], Error>>
     {
         let query = CKQuery(recordType: type, predicate: .all)
         return perform(query, in: zone)
     }
     
-    func perform(_ query: CKQuery, in zone: CKRecordZone.ID) -> Promise<[CKRecord]>
+    func perform(_ query: CKQuery,
+                 in zone: CKRecordZone.ID) -> SOPromise<Result<[CKRecord], Error>>
     {
         perform(query, in: zone, cursor: nil)
     }
     
-    private func perform(_ query: CKQuery,
-                         in zone: CKRecordZone.ID,
-                         cursor: CKQueryOperation.Cursor?) -> Promise<[CKRecord]>
+    private func perform(
+        _ query: CKQuery,
+        in zone: CKRecordZone.ID,
+        cursor: CKQueryOperation.Cursor?)
+        -> SOPromise<Result<[CKRecord], Error>>
     {
-        firstly
+        promise
         {
             performAndReturnCursor(query, in: zone, cursor: cursor)
         }
-        .then(on: queue)
+        .onSuccess
         {
-            (records, newCursor) -> Promise<[CKRecord]> in
+            (records, newCursor) -> SOPromise<Result<[CKRecord], Error>> in
             
             guard let newCursor = newCursor else
             {
-                return .value(records)
+                return .fulfilled(records)
             }
             
-            return firstly
+            return promise
             {
                 self.perform(query, in: zone, cursor: newCursor)
             }
-            .map(on: self.queue)
+            .mapSuccess
             {
-                records + $0
+                .success(records + $0)
             }
         }
     }
     
-    private func performAndReturnCursor(_ query: CKQuery,
-                                        in zone: CKRecordZone.ID,
-                                        cursor: CKQueryOperation.Cursor?) -> Promise<([CKRecord], CKQueryOperation.Cursor?)>
+    private func performAndReturnCursor(
+        _ query: CKQuery,
+        in zone: CKRecordZone.ID,
+        cursor: CKQueryOperation.Cursor?
+    )
+        -> SOPromise<Result<([CKRecord], CKQueryOperation.Cursor?), Error>>
     {
-        Promise
+        SOPromise
         {
-            resolver in
+            promise in
         
             let queryOperation = CKQueryOperation(query: query)
             queryOperation.zoneID = zone
             
-            setTimeout(on: queryOperation, or: resolver.reject)
+            setTimeout(on: queryOperation, or: promise.fulfill)
             
             var records = [CKRecord]()
             
@@ -71,11 +77,14 @@ public extension CKDatabase
                 
                 if let error = error
                 {
-                    log(error: error.ckReadable.message)
+                    log(error)
                     log("Fetched \(records.count) records before the error occured.")
+                    promise.fulfill(error)
                 }
-                
-                resolver.resolve((records, cursor), error?.ckReadable)
+                else
+                {
+                    promise.fulfill((records, cursor))
+                }
             }
             
             self.perform(queryOperation)

@@ -30,13 +30,13 @@ public extension CKDatabase
                 
                 if let savedSubscription = savedSubscriptions?.first
                 {
-                    promise.fulfill(.success(savedSubscription))
+                    promise.fulfill(savedSubscription)
                 }
                 else
                 {
                     let error = error ?? "Saving CKSubscription failed"
                     log(error)
-                    promise.fulfill(.failure(error))
+                    promise.fulfill(error)
                 }
             }
             

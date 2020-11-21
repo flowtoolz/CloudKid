@@ -21,13 +21,13 @@ public extension CKDatabase
                 
                 if let createdZone = createdZones?.first
                 {
-                    promise.fulfill(.success(createdZone))
+                    promise.fulfill(createdZone)
                 }
                 else
                 {
                     let error = error ?? "Saving CKRecordZone failed"
                     log(error)
-                    promise.fulfill(.failure(error))
+                    promise.fulfill(error)
                 }
             }
             

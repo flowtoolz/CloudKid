@@ -1,36 +1,39 @@
 import CloudKit
+import SwiftObserver
 import SwiftyToolz
-import PromiseKit
 
 public extension CKDatabase
 {
     // MARK: - Fetch Changes
     
-    func fetchChanges(from zone: CKRecordZone.ID) -> Promise<Changes>
+    func fetchChanges(from zone: CKRecordZone.ID) -> SOPromise<Result<Changes, Error>>
     {
         let token = changeToken(for: zone)
         
-        return Promise
+        return SOPromise
         {
-            resolver in
+            promise in
             
             let fetch = CKFetchRecordZoneChangesOperation(zone: zone, token: token)
             {
                 changes, error in
                 
-                if let error = error
+                if let changes = changes
                 {
-                    log(error: error.ckReadable.message)
+                    self.save(changes.serverChangeToken, for: zone)
                     
-                    // if this failed, it's unclear whether we've "used up" the change token, so we have to resync completely
-                    self.save(nil, for: zone)
+                    promise.fulfill(changes)
                 }
                 else
                 {
-                    self.save(changes?.serverChangeToken, for: zone)
+                    let error: Error = (error?.ckReadable) ?? "Fetching changes failed"
+                    log(error)
+                    
+                    // if this failed, it's unclear whether we've "used up" the change token, so we have to resync completely
+                    self.save(nil, for: zone)
+                    
+                    promise.fulfill(error)
                 }
-                
-                resolver.resolve(changes, error?.ckReadable)
             }
             
             perform(fetch)
