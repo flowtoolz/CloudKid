@@ -128,7 +128,7 @@ public class CKDatabaseController: Observable
         let conflictingServerRecords = saveResult.conflicts.map { $0.serverRecord }
         ckRecordSystemFieldsCache.save(conflictingServerRecords)
         
-        let idsOfRecordsNotSaved = saveResult.failures.map { $0.record.recordID }
+        let idsOfRecordsNotSaved = saveResult.partialFailures.map { $0.record.recordID }
         ckRecordSystemFieldsCache.deleteCKRecords(with: idsOfRecordsNotSaved)
     }
     

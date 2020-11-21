@@ -12,18 +12,21 @@ public extension CKDatabase
             return .fulfilled(.empty)
         }
         
-        return records.count > maxBatchSize
-            ? saveInBatches(records)
-            : saveInOneBatch(records)
+        let save = records.count > maxBatchSize ? saveInBatches : saveInOneBatch
+        
+        return SOPromise { save(records, $0.fulfill) }
     }
     
-    private func saveInBatches(_ records: [CKRecord]) -> ResultPromise<SaveResult>
+    private func saveInBatches(
+        _ records: [CKRecord],
+        handleResult: @escaping (SaveResult) -> Void)
     {
         var batches = records.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
         
         var successes = [CKRecord]()
-        var failures = [SaveFailure]()
+        var partialFailures = [SaveResult.PartialFailure]()
         var conflicts = [SaveConflict]()
+        var nonPartialErrors = [Error]()
         
         func saveBatchesSequentially(_ handleCompletion: @escaping () -> Void)
         {
@@ -31,38 +34,36 @@ public extension CKDatabase
             
             let batch = batches.remove(at: 0)
             
-            saveInOneBatch(batch).observedOnce
+            saveInOneBatch(batch)
             {
-                if case .success(let saveResult) = $0
-                {
-                    successes += saveResult.successes
-                    failures += saveResult.failures
-                    conflicts += saveResult.conflicts
-                }
+                saveResult in
+                
+                successes += saveResult.successes
+                partialFailures += saveResult.partialFailures
+                conflicts += saveResult.conflicts
+                nonPartialErrors += saveResult.nonPartialErrors
             }
         }
         
-        
-        return SOPromise
+        saveBatchesSequentially
         {
-            promise in
-            
-            saveBatchesSequentially
-            {
-                promise.fulfill(SaveResult(successes: successes,
-                                           conflicts: conflicts,
-                                           failures: failures))
-            }
+            handleResult(.init(successes: successes,
+                               conflicts: conflicts,
+                               partialFailures: partialFailures,
+                               nonPartialErrors: nonPartialErrors))
         }
     }
 
-    private func saveInOneBatch(_ records: [CKRecord]) -> ResultPromise<SaveResult>
+    private func saveInOneBatch(
+        _ records: [CKRecord],
+        handleResult: @escaping (SaveResult) -> Void)
     {
         let operation = CKModifyRecordsOperation(recordsToSave: records,
                                                  recordIDsToDelete: nil)
 
         var conflicts = [SaveConflict]()
-        var failures = [SaveFailure]()
+        var partialFailures = [SaveResult.PartialFailure]()
+        var nonPartialErrors = [Error]()
         
         operation.perRecordCompletionBlock =
         {
@@ -72,55 +73,69 @@ public extension CKDatabase
             
             if let conflict = SaveConflict(from: error)
             {
-                conflicts.append(conflict)
+                conflicts += conflict
             }
             else
             {
-                failures.append(SaveFailure(record, error))
+                partialFailures += SaveResult.PartialFailure(record, error)
             }
         }
         
-        return SOPromise
+        setTimeout(on: operation) { handleResult(.error($0)) }
+        
+        operation.modifyRecordsCompletionBlock =
         {
-            promise in
+            updatedRecords, _, error in
             
-            setTimeout(on: operation, or: promise.fulfill)
-            
-            operation.modifyRecordsCompletionBlock =
+            if let error = error
             {
-                updatedRecords, _, error in
-                
-                if let error = error
-                {
-                    log(error.ckReadable)
-                    
-                    if error.ckError?.code != .partialFailure
-                    {
-                        return promise.fulfill(error.ckReadable)
-                    }
-                }
-                
-                let result = SaveResult(successes: updatedRecords ?? [],
-                                        conflicts: conflicts,
-                                        failures: failures)
-                
-                promise.fulfill(result)
+                log(error.ckReadable)
+                nonPartialErrors = [error]
             }
             
-            perform(operation)
+            handleResult(.init(successes: updatedRecords ?? [],
+                               conflicts: conflicts,
+                               partialFailures: partialFailures,
+                               nonPartialErrors: nonPartialErrors))
         }
+        
+        perform(operation)
     }
     
     struct SaveResult
     {
         public static var empty: SaveResult
         {
-            SaveResult(successes: [], conflicts: [], failures: [])
+            SaveResult(successes: [],
+                       conflicts: [],
+                       partialFailures: [],
+                       nonPartialErrors: [])
+        }
+        
+        public static func error(_ error: Error) -> SaveResult
+        {
+            SaveResult(successes: [],
+                       conflicts: [],
+                       partialFailures: [],
+                       nonPartialErrors: [error])
         }
         
         public let successes: [CKRecord]
         public let conflicts: [SaveConflict]
-        public let failures: [SaveFailure]
+        public let partialFailures: [PartialFailure]
+        public let nonPartialErrors: [Error]
+        
+        public struct PartialFailure
+        {
+            init(_ record: CKRecord, _ error: Error)
+            {
+                self.record = record
+                self.error = error
+            }
+            
+            public let record: CKRecord
+            public let error: Error
+        }
     }
     
     struct SaveConflict
@@ -142,18 +157,6 @@ public extension CKDatabase
         public let clientRecord: CKRecord
         public let serverRecord: CKRecord
         public let ancestorRecord: CKRecord?
-    }
-    
-    struct SaveFailure
-    {
-        init(_ record: CKRecord, _ error: Error)
-        {
-            self.record = record
-            self.error = error
-        }
-        
-        public let record: CKRecord
-        public let error: Error
     }
 }
 

@@ -100,14 +100,14 @@ private extension CKFetchRecordZoneChangesOperation
         
         recordChangedBlock =
         {
-            record in changes.changedCKRecords.append(record)
+            record in changes.changedCKRecords += record
         }
         
         if token != nil // don't report past deletions when fetching changes for the first time
         {
             recordWithIDWasDeletedBlock =
             {
-                id, _ in changes.idsOfDeletedCKRecords.append(id)
+                id, _ in changes.idsOfDeletedCKRecords += id
             }
         }
         

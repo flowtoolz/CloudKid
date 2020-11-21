@@ -68,7 +68,7 @@ public extension CKDatabase
             
             queryOperation.recordFetchedBlock =
             {
-                records.append($0)
+                records += $0
             }
             
             queryOperation.queryCompletionBlock =

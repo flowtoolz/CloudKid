@@ -29,9 +29,9 @@ public extension CKDatabase
             return .fulfilled(.empty)
         }
         
-        let call = ids.count > maxBatchSize ? deleteCKRecordsInBatches : deleteCKRecordsInOneBatch
+        let delete = ids.count > maxBatchSize ? deleteCKRecordsInBatches : deleteCKRecordsInOneBatch
         
-        return SOPromise { call(ids, $0.fulfill) }
+        return SOPromise { delete(ids, $0.fulfill) }
     }
     
     private func deleteCKRecordsInBatches(
@@ -64,9 +64,9 @@ public extension CKDatabase
         
         deleteBatchesSequentially
         {
-            handleResult(DeletionResult(successes: successes,
-                                        partialFailures: partialFailures,
-                                        nonPartialErrors: nonPartialErrors))
+            handleResult(.init(successes: successes,
+                               partialFailures: partialFailures,
+                               nonPartialErrors: nonPartialErrors))
         }
     }
 
@@ -101,9 +101,9 @@ public extension CKDatabase
                 }
             }
             
-            handleResult(DeletionResult(successes: successes,
-                                        partialFailures: partialFailures,
-                                        nonPartialErrors: nonPartialErrors))
+            handleResult(.init(successes: successes,
+                               partialFailures: partialFailures,
+                               nonPartialErrors: nonPartialErrors))
         }
         
         perform(operation)
