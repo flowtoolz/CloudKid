@@ -2,7 +2,7 @@
     
     # meta infos
     s.name             = "CloudKid"
-    s.version          = "0.0.2"
+    s.version          = "0.0.3"
     s.summary          = "Lift your code above the harsh realities of CloudKit"
     s.description      = "This is how the kids nowadays do this cloud thing with Swift"
     s.homepage         = "http://flowtoolz.com"
