@@ -21,7 +21,7 @@ public extension CKDatabase
         }
     }
     
-    func deleteCKRecords(with ids: [CKRecord.ID]) -> SOPromise<DeletionResult>
+    func deleteCKRecords(with ids: [CKRecord.ID]) -> Promise<DeletionResult>
     {
         guard !ids.isEmpty else
         {
@@ -31,7 +31,7 @@ public extension CKDatabase
         
         let delete = ids.count > maxBatchSize ? deleteCKRecordsInBatches : deleteCKRecordsInOneBatch
         
-        return SOPromise { delete(ids, $0.fulfill) }
+        return Promise { delete(ids, $0.fulfill) }
     }
     
     private func deleteCKRecordsInBatches(

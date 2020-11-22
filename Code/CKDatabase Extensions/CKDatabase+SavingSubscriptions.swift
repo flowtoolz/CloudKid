@@ -21,7 +21,7 @@ public extension CKDatabase
         let operation = CKModifySubscriptionsOperation(subscriptionsToSave: [subscription],
                                                        subscriptionIDsToDelete: nil)
         
-        return SOPromise
+        return Promise
         {
             promise in
             

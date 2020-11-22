@@ -14,7 +14,7 @@ public extension CKDatabase
         
         let save = records.count > maxBatchSize ? saveInBatches : saveInOneBatch
         
-        return SOPromise { save(records, $0.fulfill) }
+        return Promise { save(records, $0.fulfill) }
     }
     
     private func saveInBatches(

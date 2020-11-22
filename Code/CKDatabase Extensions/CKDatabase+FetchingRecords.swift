@@ -15,7 +15,7 @@ public extension CKDatabase
             // for overall progress updates
         }
         
-        return SOPromise
+        return Promise
         {
             promise in
             

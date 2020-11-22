@@ -55,7 +55,7 @@ public extension CKDatabase
     )
         -> ResultPromise<([CKRecord], CKQueryOperation.Cursor?)>
     {
-        SOPromise
+        Promise
         {
             promise in
         

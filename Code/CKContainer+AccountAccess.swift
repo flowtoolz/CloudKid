@@ -37,7 +37,7 @@ public extension CKContainer
     
     func fetchAccountStatus() -> ResultPromise<CKAccountStatus>
     {
-        SOPromise
+        Promise
         {
             promise in
             

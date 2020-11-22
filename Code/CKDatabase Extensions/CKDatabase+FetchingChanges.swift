@@ -10,7 +10,7 @@ public extension CKDatabase
     {
         let token = changeToken(for: zone)
         
-        return SOPromise
+        return Promise
         {
             promise in
             
