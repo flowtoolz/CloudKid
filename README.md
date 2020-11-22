@@ -1,8 +1,8 @@
 ![](Documentation/Header/Header.jpg)
 
-## What does it do?
+## What?
 
-It simplifies basic uses of CloudKit:
+CloudKid simplifies basic uses of CloudKit:
  - Ensuring iCloud account access
  - Fetching records
  - Fetching changes
@@ -12,9 +12,9 @@ It simplifies basic uses of CloudKit:
  - Responding to database notifications
  - Resolving data conflicts
 
-## How does it do that?
+## How?
 
-It abstracts away the technical details of CloudKit:
+CloudKid abstracts away the technical details of CloudKit:
   * Local caching of `CKRecord`objects for recommended conflict resolution approach via saving
   * Using proper CloudKit operations for everything, no CloudKit convenience methods internally
   * Transforming CloudKit operations (not [just convenience methods](https://github.com/PromiseKit/CloudKit)) into promises
@@ -24,6 +24,5 @@ It abstracts away the technical details of CloudKit:
   * Transforming errors of type `CKError` into readable errors that can be displayed
   * Providing a meaningful result type for change fetches
   * Logging errors exactly where they occur for debugging (instead of [only propagating them through promises](https://github.com/PromiseKit/CloudKit))
-  * Providing and consistently using one serial iCloud `DispatchQueue` to avoid race conditions
   * Detecting save conflicts and providing a meaningful conflict type for conflict resolution
   * Producing a timeout error in case CloudKit operations don't respond
