@@ -50,50 +50,50 @@ public class CKDatabaseController: Observable
     public func queryCKRecords(of type: CKRecord.RecordType,
                                in zone: CKRecordZone.ID) -> ResultPromise<[CKRecord]>
     {
-        let queryPromise = ckDatabase.queryCKRecords(of: type, in: zone)
-            
-        queryPromise.observedSuccess
+        promise
+        {
+            ckDatabase.queryCKRecords(of: type, in: zone)
+        }
+        .whenSucceeded
         {
             self.ckRecordSystemFieldsCache.save($0)
         }
-        failure:
+        failed:
         {
             log($0)
         }
-        
-        return queryPromise
     }
     
     public func perform(_ query: CKQuery,
                         in zone: CKRecordZone.ID) -> ResultPromise<[CKRecord]>
     {
-        let queryPromise = ckDatabase.perform(query, in: zone)
-        
-        queryPromise.observedSuccess
+        promise
+        {
+            ckDatabase.perform(query, in: zone)
+        }
+        .whenSucceeded
         {
             self.ckRecordSystemFieldsCache.save($0)
         }
-        failure:
+        failed:
         {
             log($0)
         }
-        
-        return queryPromise
     }
     
     public func fetchChanges(from zone: CKRecordZone.ID)
         -> ResultPromise<CKDatabase.Changes>
     {
-        let fetchPromise = ckDatabase.fetchChanges(from: zone)
-        
-        fetchPromise.observedSuccess
+        promise
+        {
+            ckDatabase.fetchChanges(from: zone)
+        }
+        .whenSucceeded
         {
             self.ckRecordSystemFieldsCache.save($0.changedCKRecords)
             self.ckRecordSystemFieldsCache.deleteCKRecords(with: $0.idsOfDeletedCKRecords)
         }
-        failure: { _ in }
-        
-        return fetchPromise
+        failed: { _ in }
     }
     
     public func hasChangeToken(for zone: CKRecordZone.ID) -> Bool
@@ -110,15 +110,15 @@ public class CKDatabaseController: Observable
     
     public func save(_ records: [CKRecord]) -> ResultPromise<CKDatabase.SaveResult>
     {
-        let savePromise = ckDatabase.save(records)
-        
-        savePromise.observedSuccess
+        promise
+        {
+            ckDatabase.save(records)
+        }
+        .whenSucceeded
         {
             self.process($0)
         }
-        failure: { _ in }
-        
-        return savePromise
+        failed: { _ in }
     }
     
     private func process(_ saveResult: CKDatabase.SaveResult)
@@ -136,22 +136,22 @@ public class CKDatabaseController: Observable
                                 in zone: CKRecordZone.ID)
         -> ResultPromise<CKDatabase.DeletionResult>
     {
-        let deletionPromise = ckDatabase.deleteCKRecords(of: type, in: zone)
-        
-        deletionPromise.observedSuccess
+        promise
+        {
+            ckDatabase.deleteCKRecords(of: type, in: zone)
+        }
+        .whenSucceeded
         {
             self.process($0)
         }
-        failure: { _ in }
-        
-        return deletionPromise
+        failed: { _ in }
     }
     
     public func deleteCKRecords(with ids: [CKRecord.ID])
         -> Promise<CKDatabase.DeletionResult>
     {
         let deletionPromise = ckDatabase.deleteCKRecords(with: ids)
-        deletionPromise.observedOnce(self.process)
+        deletionPromise.whenFulfilled(process)
         return deletionPromise
     }
     
