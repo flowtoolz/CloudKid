@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "CloudKid",
-    platforms: [.iOS(.v9), .tvOS(.v9), .macOS(.v10_12)],
+    platforms: [.iOS(.v9), .tvOS(.v9), .macOS(.v10_14)],
     products: [
         .library(
             name: "CloudKid",
