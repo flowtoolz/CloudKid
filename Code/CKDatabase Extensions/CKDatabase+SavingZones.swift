@@ -11,7 +11,7 @@ public extension CKDatabase
         let operation = CKModifyRecordZonesOperation(recordZonesToSave: [recordZone],
                                                      recordZoneIDsToDelete: nil)
         
-        return Promise
+        return .init
         {
             promise in
             

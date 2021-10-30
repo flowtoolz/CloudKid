@@ -31,7 +31,7 @@ public extension CKDatabase
         
         let delete = ids.count > maxBatchSize ? deleteCKRecordsInBatches : deleteCKRecordsInOneBatch
         
-        return Promise { delete(ids, $0.fulfill) }
+        return .init { delete(ids, $0.fulfill) }
     }
     
     private func deleteCKRecordsInBatches(

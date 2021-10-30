@@ -55,7 +55,7 @@ public extension CKDatabase
     )
         -> ResultPromise<([CKRecord], CKQueryOperation.Cursor?)>
     {
-        Promise
+        .init
         {
             promise in
         

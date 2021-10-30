@@ -4,8 +4,10 @@ public extension CKRecord
 {
     convenience init?(fromEncodedSystemFields data: Data?)
     {
-        guard let data = data else { return nil }
-        let decoder = NSKeyedUnarchiver(forReadingWith: data)
+        guard let data = data,
+              let decoder = try? NSKeyedUnarchiver(forReadingFrom: data)
+        else { return nil }
+        
         decoder.requiresSecureCoding = true
         self.init(coder: decoder)
         decoder.finishDecoding()
@@ -13,11 +15,9 @@ public extension CKRecord
     
     func encodeSystemFields() -> Data
     {
-        let data = NSMutableData()
-        let encoder = NSKeyedArchiver(forWritingWith: data)
-        encoder.requiresSecureCoding = true
+        let encoder = NSKeyedArchiver(requiringSecureCoding: true)
         encodeSystemFields(with: encoder)
         encoder.finishEncoding()
-        return data as Data
+        return encoder.encodedData
     }
 }

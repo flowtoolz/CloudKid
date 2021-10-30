@@ -71,6 +71,7 @@ public extension CKError
         case .participantMayNeedVerification: return "Participant May Need Verification"
         case .serverResponseLost: return "Server Response Lost"
         case .assetNotAvailable: return "Asset Not Available"
+        case .accountTemporarilyUnavailable: return "Account Temporarily Unavailable"
         @unknown default: return "Unknown CKError Code"
         }
     }

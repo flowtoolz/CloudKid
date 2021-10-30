@@ -7,7 +7,7 @@ import SwiftyToolz
  
  It provides controlled access to the CKDatabase and cares for observability, setup, availability checking and cashing of CKRecord system fields.
  */
-public class CKDatabaseController: Observable
+public class CKDatabaseController: SwiftObserver.ObservableObject
 {
     // MARK: - Setup
     

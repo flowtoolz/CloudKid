@@ -10,7 +10,7 @@ public extension CKDatabase
     {
         let token = changeToken(for: zone)
         
-        return Promise
+        return .init
         {
             promise in
             
@@ -56,8 +56,9 @@ public extension CKDatabase
     {
         let tokenKey = defaultsKeyForChangeToken(of: zone)
         guard let tokenData = defaults.data(forKey: tokenKey) else { return nil }
-        let token = NSKeyedUnarchiver.unarchiveObject(with: tokenData)
-        return token as? CKServerChangeToken
+        
+        return try? NSKeyedUnarchiver.unarchivedObject(ofClass: CKServerChangeToken.self,
+                                                       from: tokenData)
     }
 
     private func save(_ changeToken: CKServerChangeToken?, for zone: CKRecordZone.ID)
@@ -70,8 +71,16 @@ public extension CKDatabase
             return
         }
         
-        let tokenData = NSKeyedArchiver.archivedData(withRootObject: newToken)
-        defaults.set(tokenData, forKey: tokenKey)
+        do
+        {
+            let tokenData = try NSKeyedArchiver.archivedData(withRootObject: newToken,
+                                                             requiringSecureCoding: false)
+            defaults.set(tokenData, forKey: tokenKey)
+        }
+        catch
+        {
+            log(error)
+        }
     }
     
     private var defaults: UserDefaults { .standard }
@@ -88,13 +97,13 @@ private extension CKFetchRecordZoneChangesOperation
                      token: CKServerChangeToken?,
                      handleResult: @escaping (CKDatabase.Changes?, Error?) -> Void)
     {
-        let zoneOptions = CKFetchRecordZoneChangesOperation.ZoneOptions()
+        let zoneConfig = CKFetchRecordZoneChangesOperation.ZoneConfiguration()
         
-        zoneOptions.previousServerChangeToken = token
+        zoneConfig.previousServerChangeToken = token
         
-        let options = [zone : zoneOptions]
+        let zoneConfigs = [zone : zoneConfig]
 
-        self.init(recordZoneIDs: [zone], optionsByRecordZoneID: options)
+        self.init(recordZoneIDs: [zone], configurationsByRecordZoneID: zoneConfigs)
         
         var changes = CKDatabase.Changes()
         

@@ -22,6 +22,7 @@ public extension CKContainer
                 case .available: return nil
                 case .restricted: return "iCloud account is restricted."
                 case .noAccount: return "Cannot access the iCloud account."
+                case .temporarilyUnavailable: return "iCloud account is temporarily unavailable."
                 @unknown default: return "Unknown account status."
                 }
             }()
@@ -37,7 +38,7 @@ public extension CKContainer
     
     func fetchAccountStatus() -> ResultPromise<CKAccountStatus>
     {
-        Promise
+        .init
         {
             promise in
             
