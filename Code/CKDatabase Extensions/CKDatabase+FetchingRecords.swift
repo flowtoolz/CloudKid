@@ -1,43 +1,13 @@
 import CloudKit
-import SwiftObserver
 import SwiftyToolz
 
 public extension CKDatabase
 {
-    func fetchCKRecords(with ids: [CKRecord.ID]) -> ResultPromise<[CKRecord]>
+    func fetchCKRecords(with ids: [CKRecord.ID]) async throws -> [CKRecord]
     {
-        let operation = CKFetchRecordsOperation(recordIDs: ids)
+        let fetchResult = try await records(for: ids, desiredKeys: nil)
         
-        operation.perRecordCompletionBlock =
-        {
-            record, id, error in
-            
-            // for overall progress updates
-        }
-        
-        return .init
-        {
-            promise in
-            
-            setTimeout(on: operation, or: promise.fulfill)
-
-            operation.fetchRecordsCompletionBlock =
-            {
-                recordsByID, error in
-                
-                if let recordsByID = recordsByID
-                {
-                    promise.fulfill(Array(recordsByID.values))
-                }
-                else
-                {
-                    let error: Error = error?.ckError ?? "Fetching CKRecords failed"
-                    log(error)
-                    promise.fulfill(error)
-                }
-            }
-            
-            perform(operation)
-        }
+        // TODO: at least log partial errors
+        return fetchResult.values.compactMap { try? $0.get() }
     }
 }

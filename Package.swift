@@ -1,10 +1,10 @@
-// swift-tools-version:5.1
+// swift-tools-version:5.7
 
 import PackageDescription
 
 let package = Package(
     name: "CloudKid",
-    platforms: [.iOS(.v9), .tvOS(.v9), .macOS(.v10_14)],
+    platforms: [.iOS(.v11), .tvOS(.v11), .macOS(.v12)],
     products: [
         .library(
             name: "CloudKid",
@@ -14,15 +14,15 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/flowtoolz/FoundationToolz.git",
-            .branch("master")
+            exact: "0.1.2"
         ),
         .package(
-            url: "https://github.com/flowtoolz/SwiftObserver.git",
-            .branch("master")
+            url: "https://github.com/codeface-io/SwiftObserver.git",
+            exact: "7.0.4"
         ),
         .package(
             url: "https://github.com/flowtoolz/SwiftyToolz.git",
-            .branch("master")
+            exact: "0.2.0"
         )
     ],
     targets: [

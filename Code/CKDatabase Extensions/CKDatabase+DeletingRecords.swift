@@ -1,152 +1,52 @@
 import CloudKit
-import SwiftObserver
 import SwiftyToolz
 
 public extension CKDatabase
 {
     func deleteCKRecords(of type: CKRecord.RecordType,
-                         in zone: CKRecordZone.ID) -> ResultPromise<DeletionResult>
+                         in zone: CKRecordZone.ID) async throws -> DeletionResult
     {
-        promise
-        {
-            queryCKRecords(of: type, in: zone)
-        }
-        .mapSuccess
-        {
-            $0.map { $0.recordID }
-        }
-        .onSuccess
-        {
-            self.deleteCKRecords(with: $0).map { .success($0) }
-        }
+        let records = try await queryCKRecords(of: type, in: zone)
+        let recordIDs = records.map { $0.recordID }
+        return try await deleteCKRecords(with: recordIDs)
     }
     
-    func deleteCKRecords(with ids: [CKRecord.ID]) -> Promise<DeletionResult>
+    func deleteCKRecords(with ids: [CKRecord.ID]) async throws -> DeletionResult
     {
         guard !ids.isEmpty else
         {
             log(warning: "Tried to delete CKRecords with empty array of IDs.")
-            return .fulfilled(.empty)
+            return .empty
         }
         
-        let delete = ids.count > maxBatchSize ? deleteCKRecordsInBatches : deleteCKRecordsInOneBatch
-        
-        return .init { delete(ids, $0.fulfill) }
-    }
-    
-    private func deleteCKRecordsInBatches(
-        with ids: [CKRecord.ID],
-        handleResult: @escaping (DeletionResult) -> Void)
-    {
-        var batches = ids.splitIntoSlices(ofSize: maxBatchSize).map(Array.init)
+        let modificationResult = try await modifyRecords(saving: [],
+                                                         deleting: ids)
         
         var successes = [CKRecord.ID]()
-        var partialFailures = [DeletionResult.PartialFailure]()
-        var nonPartialErrors = [Error]()
+        var failures = [CKRecord.ID: Error]()
         
-        func deleteBatchesSequentially(_ handleCompletion: @escaping () -> Void)
+        for deleteResult in modificationResult.deleteResults
         {
-            guard batches.count > 0 else { return handleCompletion() }
-            
-            let batch = batches.remove(at: 0)
-            
-            deleteCKRecordsInOneBatch(with: batch)
+            switch deleteResult.value
             {
-                deletionResult in
-                
-                successes += deletionResult.successes
-                partialFailures += deletionResult.partialFailures
-                nonPartialErrors += deletionResult.nonPartialErrors
-                
-                deleteBatchesSequentially(handleCompletion)
-            }
-        }
-        
-        deleteBatchesSequentially
-        {
-            handleResult(.init(successes: successes,
-                               partialFailures: partialFailures,
-                               nonPartialErrors: nonPartialErrors))
-        }
-    }
-
-    private func deleteCKRecordsInOneBatch(
-        with ids: [CKRecord.ID],
-        handleResult: @escaping (DeletionResult) -> Void)
-    {
-        let operation = CKModifyRecordsOperation(recordsToSave: nil,
-                                                 recordIDsToDelete: ids)
-        
-        setTimeout(on: operation) { handleResult(.error($0)) }
-        
-        operation.modifyRecordsCompletionBlock =
-        {
-            _, idsOfDeletedRecords, error in
-            
-            let successes = idsOfDeletedRecords ?? []
-            var partialFailures = [DeletionResult.PartialFailure]()
-            var nonPartialErrors = [Error]()
-            
-            if let error = error
-            {
+            case .success:
+                successes += deleteResult.key
+            case .failure(let error):
                 log(error.ckReadable)
-                
-                if error.ckError?.code == .partialFailure
-                {
-                    partialFailures = self.partialFailures(from: error)
-                }
-                else
-                {
-                    nonPartialErrors = [error]
-                }
+                failures[deleteResult.key] = error
             }
-            
-            handleResult(.init(successes: successes,
-                               partialFailures: partialFailures,
-                               nonPartialErrors: nonPartialErrors))
         }
-        
-        perform(operation)
-    }
-    
-    private func partialFailures(from error: Error) -> [DeletionResult.PartialFailure]
-    {
-        guard let ckError = error.ckError,
-            ckError.code == .partialFailure,
-            let errorsByID = ckError.partialErrorsByItemID,
-            let errorsByRecordID = errorsByID as? [CKRecord.ID : Error] else { return [] }
-        
-        return errorsByRecordID.map { DeletionResult.PartialFailure($0.0, $0.1) }
+        return .init(successes: successes, failures: failures)
     }
     
     struct DeletionResult
     {
         public static var empty: DeletionResult
         {
-            DeletionResult(successes: [], partialFailures: [], nonPartialErrors: [])
-        }
-        
-        public static func error(_ error: Error) -> DeletionResult
-        {
-            DeletionResult(successes: [], partialFailures: [], nonPartialErrors: [error])
+            DeletionResult(successes: [], failures: [:])
         }
         
         public let successes: [CKRecord.ID]
-        public let partialFailures: [PartialFailure]
-        public let nonPartialErrors: [Error]
-        
-        public struct PartialFailure
-        {
-            init(_ id: CKRecord.ID, _ error: Error)
-            {
-                self.recordID = id
-                self.error = error
-            }
-            
-            public let recordID: CKRecord.ID
-            public let error: Error
-        }
+        public let failures: [CKRecord.ID: Error]
     }
 }
-
-private let maxBatchSize = 400

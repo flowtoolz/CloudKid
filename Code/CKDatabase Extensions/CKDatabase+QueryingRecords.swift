@@ -1,93 +1,52 @@
 import CloudKit
 import FoundationToolz
-import SwiftObserver
 import SwiftyToolz
 
 public extension CKDatabase
 {
     func queryCKRecords(of type: CKRecord.RecordType,
-                        in zone: CKRecordZone.ID) -> ResultPromise<[CKRecord]>
+                        in zone: CKRecordZone.ID) async throws -> [CKRecord]
     {
-        let query = CKQuery(recordType: type, predicate: .all)
-        return perform(query, in: zone)
+        try await perform(CKQuery(recordType: type, predicate: .all),
+                          in: zone)
     }
     
     func perform(_ query: CKQuery,
-                 in zone: CKRecordZone.ID) -> ResultPromise<[CKRecord]>
+                 in zone: CKRecordZone.ID) async throws -> [CKRecord]
     {
-        perform(query, in: zone, cursor: nil)
-    }
-    
-    private func perform(
-        _ query: CKQuery,
-        in zone: CKRecordZone.ID,
-        cursor: CKQueryOperation.Cursor?)
-        -> ResultPromise<[CKRecord]>
-    {
-        promise
-        {
-            performAndReturnCursor(query, in: zone, cursor: cursor)
-        }
-        .onSuccess
-        {
-            (records, newCursor) -> ResultPromise<[CKRecord]> in
-            
-            guard let newCursor = newCursor else
-            {
-                return .fulfilled(records)
-            }
-            
-            return promise
-            {
-                self.perform(query, in: zone, cursor: newCursor)
-            }
-            .mapSuccess
-            {
-                records + $0
-            }
-        }
-    }
-    
-    private func performAndReturnCursor(
-        _ query: CKQuery,
-        in zone: CKRecordZone.ID,
-        cursor: CKQueryOperation.Cursor?
-    )
-        -> ResultPromise<([CKRecord], CKQueryOperation.Cursor?)>
-    {
-        .init
-        {
-            promise in
+        let result = try await records(matching: query,
+                                       inZoneWith: zone,
+                                       desiredKeys: nil)
         
-            let queryOperation = CKQueryOperation(query: query)
-            queryOperation.zoneID = zone
-            
-            setTimeout(on: queryOperation, or: promise.fulfill)
-            
-            var records = [CKRecord]()
-            
-            queryOperation.recordFetchedBlock =
-            {
-                records += $0
-            }
-            
-            queryOperation.queryCompletionBlock =
-            {
-                cursor, error in
-                
-                if let error = error
-                {
-                    log(error)
-                    log("Fetched \(records.count) records before the error occured.")
-                    promise.fulfill(error)
-                }
-                else
-                {
-                    promise.fulfill((records, cursor))
-                }
-            }
-            
-            self.perform(queryOperation)
+        // TODO: at least log partial errors
+        let matchingRecords = result.matchResults.compactMap { try? $0.1.get() }
+        
+        if let cursor = result.queryCursor // start recursion
+        {
+            let moreMatchingRecords = try await recursivelyQueryCKRecords(with: cursor)
+            return matchingRecords + moreMatchingRecords
+        }
+        else // no recursion
+        {
+            return matchingRecords
+        }
+    }
+    
+    private func recursivelyQueryCKRecords(with cursor: CKQueryOperation.Cursor) async throws -> [CKRecord]
+    {
+        let result = try await records(continuingMatchFrom: cursor)
+        
+        // TODO: at least log partial errors
+        let matchingRecords = result.matchResults.compactMap { try? $0.1.get() }
+        
+        if let anotherCursor = result.queryCursor // recursion
+        {
+            let moreMatchingRecords = try await recursivelyQueryCKRecords(with: anotherCursor)
+            return matchingRecords + moreMatchingRecords
+        }
+        else // base case
+        {
+            return matchingRecords
         }
     }
 }

@@ -1,42 +1,42 @@
 import CloudKit
-import SwiftObserver
 import SwiftyToolz
 
 public extension CKDatabase
 {
     // MARK: - Fetch Changes
     
-    func fetchChanges(from zone: CKRecordZone.ID) -> ResultPromise<Changes>
+    func fetchChanges(from zone: CKRecordZone.ID) async throws -> Changes
     {
         let token = changeToken(for: zone)
-        
-        return .init
+
+        do
         {
-            promise in
+            let changesTuple = try await recordZoneChanges(inZoneWith: zone,
+                                                           since: token)
             
-            let fetch = CKFetchRecordZoneChangesOperation(zone: zone, token: token)
-            {
-                changes, error in
-                
-                if let changes = changes
-                {
-                    self.save(changes.serverChangeToken, for: zone)
-                    
-                    promise.fulfill(changes)
-                }
-                else
-                {
-                    let error: Error = (error?.ckReadable) ?? "Fetching changes failed"
-                    log(error)
-                    
-                    // if this failed, it's unclear whether we've "used up" the change token, so we have to resync completely
-                    self.save(nil, for: zone)
-                    
-                    promise.fulfill(error)
-                }
-            }
+            let changedRecords = changesTuple.modificationResultsByID
+                .values
+                .compactMap { try? $0.get() }
+                .map { $0.record }
             
-            perform(fetch)
+            let idsOfDeletedRecords = changesTuple.deletions.map { $0.recordID }
+            
+            let changes = Changes(changedCKRecords: changedRecords,
+                                  idsOfDeletedCKRecords: idsOfDeletedRecords,
+                                  serverChangeToken: changesTuple.changeToken)
+         
+            save(changes.serverChangeToken, for: zone)
+            
+            return changes
+        }
+        catch
+        {
+            log(error.readable)
+            
+            // if this failed, it's unclear whether we've "used up" the change token, so we have to resync completely
+            save(nil, for: zone)
+            
+            throw error
         }
     }
     
@@ -79,7 +79,7 @@ public extension CKDatabase
         }
         catch
         {
-            log(error)
+            log(error.readable)
         }
     }
     
@@ -88,87 +88,6 @@ public extension CKDatabase
     private func defaultsKeyForChangeToken(of zone: CKRecordZone.ID) -> String
     {
         "ChangeTokenForCKRecordZoneID" + zone.zoneName
-    }
-}
-
-private extension CKFetchRecordZoneChangesOperation
-{
-    convenience init(zone: CKRecordZone.ID,
-                     token: CKServerChangeToken?,
-                     handleResult: @escaping (CKDatabase.Changes?, Error?) -> Void)
-    {
-        let zoneConfig = CKFetchRecordZoneChangesOperation.ZoneConfiguration()
-        
-        zoneConfig.previousServerChangeToken = token
-        
-        let zoneConfigs = [zone : zoneConfig]
-
-        self.init(recordZoneIDs: [zone], configurationsByRecordZoneID: zoneConfigs)
-        
-        var changes = CKDatabase.Changes()
-        
-        recordChangedBlock =
-        {
-            record in changes.changedCKRecords += record
-        }
-        
-        if token != nil // don't report past deletions when fetching changes for the first time
-        {
-            recordWithIDWasDeletedBlock =
-            {
-                id, _ in changes.idsOfDeletedCKRecords += id
-            }
-        }
-        
-        recordZoneChangeTokensUpdatedBlock =
-        {
-            zoneID, serverToken, clientToken in
-            
-            guard zoneID == zone else
-            {
-                log(error: "Unexpected zone: \(zoneID.zoneName)")
-                return
-            }
-            
-            if serverToken != nil
-            {
-                changes.serverChangeToken = serverToken
-            }
-        }
-        
-        recordZoneFetchCompletionBlock =
-        {
-            zoneID, serverToken, clientToken, _, error in
-
-            guard zoneID == zone else
-            {
-                log(error: "Unexpected zone: \(zoneID.zoneName)")
-                return
-            }
-            
-            if let error = error
-            {
-                log(error: error.ckReadable.message)
-                return
-            }
-            
-            if serverToken != nil
-            {
-                changes.serverChangeToken = serverToken
-            }
-        }
-        
-        fetchRecordZoneChangesCompletionBlock =
-        {
-            if let error = $0
-            {
-                log(error: error.ckReadable.message)
-                handleResult(nil, error.ckReadable)
-                return
-            }
-            
-            handleResult(changes, nil)
-        }
     }
 }
 

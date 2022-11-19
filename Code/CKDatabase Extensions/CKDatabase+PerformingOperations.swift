@@ -5,27 +5,16 @@ public extension CKDatabase
 {
     func perform(_ operation: CKDatabaseOperation)
     {
-        operation.queuePriority = .high
+        operation.queuePriority = .normal
         operation.qualityOfService = .userInitiated
         add(operation)
     }
     
     func setTimeout(of seconds: Double = CKDatabase.timeoutAfterSeconds,
-                    on operation: CKDatabaseOperation,
-                    or handleTimeout: @escaping (ReadableError) -> Void)
+                    on operation: CKDatabaseOperation)
     {
-        if #available(OSX 10.13, *)
-        {
-            operation.configuration.timeoutIntervalForRequest = seconds
-            operation.configuration.timeoutIntervalForResource = seconds
-        }
-        else
-        {
-            queue.asyncAfter(deadline: .now() + .milliseconds(Int(seconds * 1000)))
-            {
-                handleTimeout(.message("iCloud database operation didn't respond and was cancelled after \(seconds) seconds."))
-            }
-        }
+        operation.configuration.timeoutIntervalForRequest = seconds
+        operation.configuration.timeoutIntervalForResource = seconds
     }
     
     #if DEBUG

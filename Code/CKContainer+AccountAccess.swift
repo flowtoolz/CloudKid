@@ -4,58 +4,22 @@ import SwiftyToolz
 
 public extension CKContainer
 {
-    func ensureAccountAccess() -> ResultPromise<Void>
+    func ensureAccountAccess() async throws
     {
-        promise
+        switch try await accountStatus()
         {
-            fetchAccountStatus()
-        }
-        .mapSuccess
-        {
-            status in
-           
-            let potentialErrorMessage: String? =
-            {
-                switch status
-                {
-                case .couldNotDetermine: return "Could not determine iCloud account status."
-                case .available: return nil
-                case .restricted: return "iCloud account is restricted."
-                case .noAccount: return "Cannot access the iCloud account."
-                case .temporarilyUnavailable: return "iCloud account is temporarily unavailable."
-                @unknown default: return "Unknown account status."
-                }
-            }()
-            
-            if let errorMessage = potentialErrorMessage
-            {
-                let error = ReadableError(errorMessage)
-                log(error)
-                throw error
-            }
-        }
-    }
-    
-    func fetchAccountStatus() -> ResultPromise<CKAccountStatus>
-    {
-        .init
-        {
-            promise in
-            
-            accountStatus
-            {
-                status, error in
-                
-                if let error = error
-                {
-                    log(error)
-                    promise.fulfill(error)
-                }
-                else
-                {
-                    promise.fulfill(status)
-                }
-            }
+        case .couldNotDetermine:
+            throw "Could not determine iCloud account status."
+        case .available:
+            break
+        case .restricted:
+            throw "iCloud account is restricted."
+        case .noAccount:
+            throw "Cannot access the iCloud account."
+        case .temporarilyUnavailable:
+            throw "iCloud account is temporarily unavailable."
+        @unknown default:
+            throw "Unknown account status"
         }
     }
 }
